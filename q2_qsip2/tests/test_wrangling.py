@@ -32,12 +32,12 @@ class WranglingTests(TestPluginBase):
     def test_extract_source_metadata(self):
         extracted = _extract_source_metadata(
             self.sample_metadata(), 'source-id'
-        )
+        ).to_dataframe().reset_index()
 
         # only rows that have a unique 'source-id' are retained; only
         # source-level columns are retained
         exp = pd.DataFrame({
-            'source-id': ['s1', 's2'],
+            'id': ['s1', 's2'],
             'source-level-data': ['x', 'y'],
         })
 
