@@ -19,6 +19,7 @@ SOURCE_COLUMNS = (
 )
 
 
+
 SAMPLE_COLUMNS = (
     'gradient_position',
     'gradient_pos_density',
@@ -48,9 +49,9 @@ def _construct_column_mapping(arguments: dict) -> dict:
         metadata.
     '''
     column_mapping = {}
-    for default, provided in arguments:
+    for default, provided in arguments.items():
         default = default.removesuffix('_column')
-        if default + '_column' in ALL_COLUMNS:
+        if default in ALL_COLUMNS:
             if default == provided:
                 column_mapping[default] = None
             else:
@@ -62,7 +63,7 @@ def _construct_column_mapping(arguments: dict) -> dict:
 def _extract_source_metadata(
     sample_md: qiime2.Metadata,
     source_column: str,
-) -> pd.DataFrame:
+) -> qiime2.Metadata:
     '''
     Extract source-level metadata from sample-level metadata. The input
     source-level metadata must have a column that indicates which source each
@@ -85,10 +86,18 @@ def _extract_source_metadata(
 
     Returns
     -------
-    pd.DataFrame
+    qiime2.Metadata
         The extracted source-level metadata.
     '''
     sample_df = sample_md.to_dataframe().reset_index()
+
+    if source_column not in sample_df.columns:
+        error_msg = (
+            f'The source material identifier column "{source_column}" was '
+            'not found in the sample-level metadata. Please either update '
+            'the parameter value or your metadata.'
+        )
+        raise ValueError(error_msg)
 
     grouped_df = sample_df.groupby(source_column, as_index=False)
     unique_counts = grouped_df.nunique()
@@ -105,11 +114,14 @@ def _extract_source_metadata(
 
 
 def _validate_metadata_columns(
-    metadata: qiime2.Metadata, column_mapping: dict, metadata_type: str
-) -> None:
+    metadata: qiime2.Metadata,
+    column_mapping: dict,
+    metadata_type: str,
+    extracted: bool = False
+) -> qiime2.Metadata:
     '''
     Asserts that all columns specified in `columns_mapping` are in
-    `metadata`.
+    `metadata`. Then renames all non-default columns to their defaults.
 
     Parameters
     ----------
@@ -121,18 +133,24 @@ def _validate_metadata_columns(
         `metadata`.
     metadata_type : str
         One of 'source', 'sample'.
+    extracted : bool
+        Whether `metadata` was extracted from another metadata. Applies only
+        if `metadata_type` is "source". Used only to clarify the error message.
 
     Returns
     -------
-    None
-        Silence do be kinda gold doe.
+    qiime2.Metadata
+        The input `metadata` with the non-default columns renamed to defaults.
 
     Raises
     ------
     ValueError
-        If one or more of `columns` are not present in `metadata`.
+        If one or more of the columns in `column_mapping` are not present in
+        `metadata`.
     '''
-    md_df = metadata.to_dataframe().reset_index()
+    md_df = metadata.to_dataframe()
+    index_name = md_df.index.name
+    md_df.reset_index(inplace=True)
 
     columns = []
     for default, provided in column_mapping.items():
@@ -142,10 +160,11 @@ def _validate_metadata_columns(
             columns.append(provided)
 
     shared_columns = md_df.columns.intersection(columns)
+
     if len(shared_columns) != len(columns):
         error_string = (
             'The following required columns were not found in the '
-            f'{metadata_type} metadata:\n\n'
+            f'{"extracted " if extracted else ""}{metadata_type} metadata:\n\n'
             f'{"Default":^25} | {"Provided":^25}\n'
             f'{"-" * 23:^25} | {"-" * 23:^25}'
         )
@@ -173,13 +192,24 @@ def _validate_metadata_columns(
 
         raise ValueError(error_string)
 
+    # otherwise if all columns present, change column names
+    rename_columns = {
+        provided: default for default, provided in column_mapping.items()
+        if provided is not None
+    }
+    md_df.rename(rename_columns, axis=1, inplace=True)
+
+    md_df.set_index(index_name, inplace=True)
+
+    return qiime2.Metadata(md_df)
+
 
 def _handle_metadata(
     sample_metadata: qiime2.Metadata,
     source_metadata: qiime2.Metadata,
-    source_column: Optional[str],
+    source_column: str,
     column_mapping: dict,
-) -> tuple:
+) -> tuple[qiime2.Metadata, qiime2.Metadata]:
     '''
     Validates the input metadata and extracts source-level metadata from
     sample-level metadata if necessary.
@@ -190,7 +220,7 @@ def _handle_metadata(
         The sample-level metadata.
     source_metadata : qiime2.Metadata
         The source-level metadata, if provided.
-    source_column : str | None
+    source_column : str
         The column name, in the sample metadata, of the source identifier for
         each sample.
     column_mapping : dict[str, str]
@@ -200,11 +230,13 @@ def _handle_metadata(
 
     Returns
     -------
-    tuple[pd.DataFrame]
-        The source and sample metadata as pandas dataframes.
+    tuple[qiime2.Metadata]
+        The source and sample metadata tables.
     '''
     # extract source-level metadata if only sample-level metadata was provided
+    extracted = False
     if source_metadata is None:
+        extracted = True
         source_metadata = _extract_source_metadata(
             sample_metadata, source_column
         )
@@ -212,18 +244,23 @@ def _handle_metadata(
     # split column mapping into source-, sample-specific mappings
     source_column_mapping = {}
     sample_column_mapping = {}
-    for default, provided in column_mapping:
+    for default, provided in column_mapping.items():
         if default in SOURCE_COLUMNS:
             source_column_mapping[default] = provided
         elif default in SAMPLE_COLUMNS:
             sample_column_mapping[default] = provided
 
     # validate both metadatas
-    _validate_metadata_columns(
-        source_metadata, source_column_mapping, metadata_type='source'
+    source_metadata = _validate_metadata_columns(
+        source_metadata,
+        source_column_mapping,
+        metadata_type='source',
+        extracted=extracted
     )
-    _validate_metadata_columns(
-        sample_metadata, sample_column_mapping, metadata_type='sample'
+    sample_metadata =_validate_metadata_columns(
+        sample_metadata,
+        sample_column_mapping,
+        metadata_type='sample',
     )
 
     return (source_metadata, sample_metadata)

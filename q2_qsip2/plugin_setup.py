@@ -34,13 +34,12 @@ plugin.methods.register_function(
     parameters={
         'sample_metadata': Metadata,
         'source_metadata': Metadata,
-        'split_metadata': Bool,
         'source_mat_id_column': Str,
         'isotope_column': Str,
         'isotopolog_column': Str,
         'gradient_position_column': Str,
-        'gradient_position_density_column': Str,
-        'gradient_position_amount_column': Str,
+        'gradient_pos_density_column': Str,
+        'gradient_pos_amt_column': Str,
     },
     outputs=[
         ('output_table', FeatureTable[Frequency])
@@ -53,13 +52,12 @@ plugin.methods.register_function(
         # TODO: more detail
         'sample_metadata': 'The sample-level metadata.',
         'source_metadata': 'The source-level metadata.',
-        'split_metadata': 'Whether to extract source-level metadata.',
         'source_mat_id_column': 'The name of the source id column.',
         'isotope_column': 'The name of the isotope column.',
         'isotopolog_column': 'The name of the isotopolog column.',
         'gradient_position_column': 'The name of the gradient position column.',
-        'gradient_position_density_column': 'The name of the density column.',
-        'gradient_position_amount_column': 'The name of the amount column.',
+        'gradient_pos_density_column': 'The name of the density column.',
+        'gradient_pos_amt_column': 'The name of the amount column.',
     },
     output_descriptions={
         # TODO: more detail
