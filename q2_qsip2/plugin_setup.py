@@ -10,8 +10,10 @@ from qiime2.plugin import Bool, Citations, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
-from q2_qsip2.workflow import standard_workflow
-
+from q2_qsip2.workflow import standard_workflow, generate_qsip_metadata
+from q2_qsip2._formats import (
+    QSIP2Metadata, QSIP2MetadataFormat, QSIP2MetadataDirectoryFormat
+)
 
 citations = Citations.load("citations.bib", package="q2_qsip2")
 
@@ -20,7 +22,10 @@ plugin = Plugin(
     version=__version__,
     website="www.qiime2.org",
     package="q2_qsip2",
-    description="A plugin for analyzing quantitative stable isotope probing (qSIP) data.",
+    description=(
+        "A plugin for analyzing quantitative stable isotope probing (qSIP) "
+        "data."
+    ),
     short_description="Analyze qSIP data.",
     # TODO
     citations=[citations['Caporaso-Bolyen-2024']]
@@ -67,5 +72,53 @@ plugin.methods.register_function(
     description=(
         # TODO: more detail
         'Placeholder.'
-    ),
+    )
+)
+
+plugin.methods.register_function(
+    function=generate_qsip_metadata,
+    inputs={},
+    parameters={
+        'sample_metadata': Metadata,
+        'source_metadata': Metadata,
+        'source_mat_id_column': Str,
+        'isotope_column': Str,
+        'isotopolog_column': Str,
+        'gradient_position_column': Str,
+        'gradient_pos_density_column': Str,
+        'gradient_pos_amt_column': Str,
+    },
+    outputs=[
+        ('qsip_metadata', QSIP2Metadata)
+    ],
+    input_descriptions={},
+    parameter_descriptions={
+        'sample_metadata': 'The sample-level metadata.',
+        'source_metadata': 'The source-level metadata.',
+        'source_mat_id_column': 'The name of the source id column.',
+        'isotope_column': 'The name of the isotope column.',
+        'isotopolog_column': 'The name of the isotopolog column.',
+        'gradient_position_column': 'The name of the gradient position column.',
+        'gradient_pos_density_column': 'The name of the density column.',
+        'gradient_pos_amt_column': 'The name of the amount column.',
+    },
+    output_descriptions={
+        'qsip_metadata': 'Placeholder.'
+    },
+    name='Process and combine qSIP metadata',
+    description=(
+        'Placeholder.'
+    )
+)
+
+plugin.register_semantic_types(QSIP2Metadata)
+
+
+plugin.register_formats(QSIP2MetadataFormat, QSIP2MetadataDirectoryFormat)
+
+
+plugin.register_artifact_class(
+    QSIP2Metadata,
+    directory_format=QSIP2MetadataDirectoryFormat,
+    description="Validated qSIP2 metadata."
 )
