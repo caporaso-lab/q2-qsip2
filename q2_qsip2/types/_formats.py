@@ -1,20 +1,17 @@
 import pandas as pd
 
 import qiime2
-from qiime2.plugin import SemanticType, ValidationError
+from qiime2.plugin import ValidationError
 import qiime2.plugin.model as model
 
 from q2_qsip2._wrangling import ALL_COLUMNS
-
-
-QSIP2Metadata = SemanticType('QSIP2Metadata')
 
 
 class QSIP2MetadataFormat(model.TextFileFormat):
     def _to_dataframe(self):
         return pd.read_csv(self.path, sep='\t')
 
-    def _validate_(self):
+    def _validate_(self, level):
         df = self._to_dataframe()
 
         missing_columns = set(ALL_COLUMNS) - set(df.columns)

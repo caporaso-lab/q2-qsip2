@@ -6,14 +6,15 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import importlib
+
 from qiime2.plugin import Bool, Citations, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
 from q2_qsip2.workflow import standard_workflow, generate_qsip_metadata
-from q2_qsip2._formats import (
-    QSIP2Metadata, QSIP2MetadataFormat, QSIP2MetadataDirectoryFormat
-)
+from q2_qsip2.types import QSIP2Metadata
+
 
 citations = Citations.load("citations.bib", package="q2_qsip2")
 
@@ -35,42 +36,22 @@ plugin.methods.register_function(
     function=standard_workflow,
     inputs={
         'table': FeatureTable[Frequency],
+        'qsip_metadata': QSIP2Metadata,
     },
-    parameters={
-        'sample_metadata': Metadata,
-        'source_metadata': Metadata,
-        'source_mat_id_column': Str,
-        'isotope_column': Str,
-        'isotopolog_column': Str,
-        'gradient_position_column': Str,
-        'gradient_pos_density_column': Str,
-        'gradient_pos_amt_column': Str,
-    },
+    parameters={},
     outputs=[
         ('output_table', FeatureTable[Frequency])
     ],
     input_descriptions={
-        # TODO: more detail
         'table': 'The feature table.',
+        'qsip_metadata': 'The qSIP metadata.',
     },
-    parameter_descriptions={
-        # TODO: more detail
-        'sample_metadata': 'The sample-level metadata.',
-        'source_metadata': 'The source-level metadata.',
-        'source_mat_id_column': 'The name of the source id column.',
-        'isotope_column': 'The name of the isotope column.',
-        'isotopolog_column': 'The name of the isotopolog column.',
-        'gradient_position_column': 'The name of the gradient position column.',
-        'gradient_pos_density_column': 'The name of the density column.',
-        'gradient_pos_amt_column': 'The name of the amount column.',
-    },
+    parameter_descriptions={},
     output_descriptions={
-        # TODO: more detail
         'output_table': 'Placeholder.'
     },
     name='Run the standard qSIP2 workflow.',
     description=(
-        # TODO: more detail
         'Placeholder.'
     )
 )
@@ -111,14 +92,4 @@ plugin.methods.register_function(
     )
 )
 
-plugin.register_semantic_types(QSIP2Metadata)
-
-
-plugin.register_formats(QSIP2MetadataFormat, QSIP2MetadataDirectoryFormat)
-
-
-plugin.register_artifact_class(
-    QSIP2Metadata,
-    directory_format=QSIP2MetadataDirectoryFormat,
-    description="Validated qSIP2 metadata."
-)
+importlib.import_module('q2_qsip2.types._deferred_setup')
