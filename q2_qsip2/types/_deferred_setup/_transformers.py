@@ -19,6 +19,6 @@ def _1(md: qiime2.Metadata) -> QSIP2MetadataFormat:
 @plugin.register_transformer
 def _2(ff: QSIP2MetadataFormat) -> qiime2.Metadata:
     with ff.open() as fh:
-        df = pd.read_csv(fh, sep='\t')
+        df = pd.read_csv(fh, sep='\t', index_col=0)
 
     return qiime2.Metadata(df)
