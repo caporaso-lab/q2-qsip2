@@ -115,7 +115,7 @@ def _extract_source_metadata(
 
 def _handle_metadata(
     sample_metadata: qiime2.Metadata,
-    source_metadata: qiime2.Metadata,
+    source_metadata: Optional[qiime2.Metadata],
     source_column: str,
     column_mapping: dict,
 ) -> tuple[qiime2.Metadata, qiime2.Metadata]:
@@ -127,7 +127,7 @@ def _handle_metadata(
     ----------
     sample_metadata : qiime2.Metadata
         The sample-level metadata.
-    source_metadata : qiime2.Metadata
+    source_metadata : qiime2.Metadata or None
         The source-level metadata, if provided.
     source_column : str
         The column name, in the sample metadata, of the source identifier for
@@ -264,65 +264,3 @@ def _validate_metadata_columns(
     md_df.set_index(index_name, inplace=True)
 
     return qiime2.Metadata(md_df)
-
-
-def _combine_metadatas(
-    sample_metadata: qiime2.Metadata, source_metadata: qiime2.Metadata
-) -> qiime2.Metadata:
-    '''
-    Combines sample-level and source-level metadata objects into a single
-    metadata object. Allows users to manage only a single metadata file.
-
-    The `sample_metadata` and `source_metadata` objects should already be
-    validated and have the required columns named with the defaults.
-
-    Parameters
-    ----------
-    sample_metadata : qiime2.Metadata
-        The sample-level metadata, validated and renamed.
-    source_metadata : qiime2.Metadata
-        The source-level metadata, validated and renamed.
-
-    Returns
-    -------
-    qiime2.Metadata
-        A single metadata object that combines the data `sample_metadata` and
-        `source_metadata`.
-
-    Raises
-    ------
-    ValueError
-        If the source material ids in the sample-level metadata contain ids
-        not found in the source-level metadata.
-    '''
-    sample_df = sample_metadata.to_dataframe()
-    sample_index_name = sample_df.index.name
-    sample_df.reset_index(inplace=True)
-
-    source_df = source_metadata.to_dataframe()
-    source_index_name = source_df.index.name
-    source_df.reset_index(inplace=True)
-
-    combined_df = pd.merge(
-        sample_df,
-        source_df,
-        how='inner',
-        left_on='source_mat_id',
-        right_on=source_index_name
-    )
-
-    # TODO: should this error?
-    if len(combined_df) != len(sample_df):
-        sample_ids = set(sample_df.source_mat_id)
-        source_ids = set(source_df.source_index_name)
-        missing = sample_ids - source_ids
-        msg = (
-            'Source material IDs in the sample-level metadata were not found '
-            f'in the source-level metadata. The missing ids are: {missing}.'
-        )
-        raise ValueError(msg)
-
-    combined_df.drop(columns=[source_index_name], inplace=True)
-    combined_df.set_index(sample_index_name, inplace=True)
-
-    return qiime2.Metadata(combined_df)
