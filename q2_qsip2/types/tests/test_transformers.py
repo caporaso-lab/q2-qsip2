@@ -37,10 +37,13 @@ class TestTransformers(TestPluginBase):
         from_format_transformer = self.get_transformer(QSIP2DataFormat, RS4)
 
         qsip_object = self.get_qsip_object()
-        round_trip_qsip_object = from_format_transformer(
+        ro.r['validate'](qsip_object)
+
+        round_tripped_qsip_object = from_format_transformer(
             from_object_transformer(qsip_object)
         )
+        ro.r['validate'](round_tripped_qsip_object)
 
         self.assertEqual(
-            pickle.dumps(qsip_object), pickle.dumps(round_trip_qsip_object)
+            pickle.dumps(qsip_object), pickle.dumps(round_tripped_qsip_object)
         )
