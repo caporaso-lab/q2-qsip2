@@ -8,12 +8,13 @@
 
 import importlib
 
+from q2_qsip2.visualizers._visualizers import plot_weighted_average_density
 from qiime2.plugin import Bool, Citations, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
-from q2_qsip2.workflow import standard_workflow, generate_qsip_metadata
-from q2_qsip2.types import QSIP2Metadata
+from q2_qsip2.workflow import standard_workflow, create_qsip_data
+from q2_qsip2.types import QSIP2Data
 
 
 citations = Citations.load("citations.bib", package="q2_qsip2")
@@ -36,7 +37,7 @@ plugin.methods.register_function(
     function=standard_workflow,
     inputs={
         'table': FeatureTable[Frequency],
-        'qsip_metadata': QSIP2Metadata,
+        'qsip_metadata': QSIP2Data,
     },
     parameters={},
     outputs=[
@@ -57,8 +58,10 @@ plugin.methods.register_function(
 )
 
 plugin.methods.register_function(
-    function=generate_qsip_metadata,
-    inputs={},
+    function=create_qsip_data,
+    inputs={
+        'table': FeatureTable[Frequency]
+    },
     parameters={
         'sample_metadata': Metadata,
         'source_metadata': Metadata,
@@ -70,7 +73,7 @@ plugin.methods.register_function(
         'gradient_pos_amt_column': Str,
     },
     outputs=[
-        ('qsip_metadata', QSIP2Metadata)
+        ('qsip_data', QSIP2Data)
     ],
     input_descriptions={},
     parameter_descriptions={
@@ -84,12 +87,25 @@ plugin.methods.register_function(
         'gradient_pos_amt_column': 'The name of the amount column.',
     },
     output_descriptions={
-        'qsip_metadata': 'Placeholder.'
+        'qsip_data': 'Placeholder.'
     },
-    name='Process and combine qSIP metadata',
+    name='Bundle qSIP metadata and feature table.',
     description=(
         'Placeholder.'
     )
 )
+
+'''
+plugin.visualizers.register_function(
+    function=plot_weighted_average_density,
+    inputs={},
+    parameters={},
+    input_descriptions={},
+    parameter_descriptions={},
+    name="Plot weighted average densities.",
+    description=(),
+    citations=[],
+)
+'''
 
 importlib.import_module('q2_qsip2.types._deferred_setup')

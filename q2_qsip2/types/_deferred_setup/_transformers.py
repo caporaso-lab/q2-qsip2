@@ -1,24 +1,26 @@
 import pandas as pd
+from rpy2.robjects.methods import RS4
+
+import pickle
 
 import qiime2
 
 from q2_qsip2.plugin_setup import plugin
-from q2_qsip2.types import QSIP2MetadataFormat
+from q2_qsip2.types import QSIP2DataFormat
 
 
 @plugin.register_transformer
-def _1(md: qiime2.Metadata) -> QSIP2MetadataFormat:
-    df = md.to_dataframe()
-    ff = QSIP2MetadataFormat()
+def _1(qsip_object: RS4) -> QSIP2DataFormat:
+    ff = QSIP2DataFormat()
     with ff.open() as fh:
-        df.to_csv(fh, sep='\t')
+        pickle.dump(qsip_object, fh)
 
     return ff
 
 
 @plugin.register_transformer
-def _2(ff: QSIP2MetadataFormat) -> qiime2.Metadata:
+def _2(ff: QSIP2DataFormat) -> RS4:
     with ff.open() as fh:
-        df = pd.read_csv(fh, sep='\t', index_col=0)
+        qsip_object = pickle.load(fh)
 
-    return qiime2.Metadata(df)
+    return qsip_object

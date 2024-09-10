@@ -1,30 +1,38 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2024, QIIME 2 development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file LICENSE, distributed with this software.
+# ----------------------------------------------------------------------------
 import pandas as pd
+import rpy2.robjects as ro
+
+import pickle
 
 import qiime2
 from qiime2.plugin import ValidationError
 import qiime2.plugin.model as model
 
-from q2_qsip2._wrangling import ALL_COLUMNS
 
-
-class QSIP2MetadataFormat(model.TextFileFormat):
-    def _to_dataframe(self):
-        return pd.read_csv(self.path, sep='\t')
+class QSIP2DataFormat(model.BinaryFileFormat):
+    package = 'q2_qsip2.types.tests'
 
     def _validate_(self, level):
-        df = self._to_dataframe()
+        with self.open() as fh:
+            qsip_data_obj = pickle.load(fh)
 
-        missing_columns = set(ALL_COLUMNS) - set(df.columns)
-        if missing_columns:
+        try:
+            # TODO: why not implemented in R package?
+            ro.r['validate'](qsip_data_obj)
+        except Exception as e:
             msg = (
-                'There are one or more required columns that are missing from '
-                f'the qSIP2 metadata. The missing column(s): {missing_columns}.'
-                'Please use the `generate_qsip_metadata` method to create a '
-                'valid qSIP2 metadata artifact.'
+                'There was a problem loading your qSIP2 data. See the below '
+                f'error message for more detail.\n{str(e)}\n'
             )
             raise ValidationError(msg)
 
 
-QSIP2MetadataDirectoryFormat = model.SingleFileDirectoryFormat(
-    'QSIP2MetadataDirectoryFormat', 'metadata.tsv', QSIP2MetadataFormat
+QSIP2DataDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2DataDirectoryFormat', 'qsip-data.pickle', QSIP2DataFormat
 )
