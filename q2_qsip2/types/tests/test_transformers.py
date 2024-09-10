@@ -7,72 +7,40 @@
 # ----------------------------------------------------------------------------
 import pandas as pd
 from pandas.testing import assert_frame_equal
+import rpy2.robjects as ro
+from rpy2.robjects.methods import RS4
+
+import importlib.resources
+import pickle
 
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_qsip2.types import QSIP2MetadataFormat
+from q2_qsip2.types import QSIP2DataFormat
 
 
 class TestTransformers(TestPluginBase):
     package = 'q2_qsip2.types.tests'
 
-    def metadata_df(self):
-        return pd.DataFrame({
-            'sample-id': ['s1', 's2', 's3', 's4'],
-            'isotope': ['16O', '16O', '18O', '18O'],
-            'isotopolog': ['water', 'water', 'water', 'water'],
-            'gradient_position': [1, 2, 1, 2],
-            'gradient_pos_density': [0.8, 0.7, 0.9, 0.8],
-            'gradient_pos_amt': [100, 50, 110, 40],
-            'source_mat_id': ['a', 'a', 'b', 'b'],
-        })
-
-    def metadata_df_types(self):
-        # this is necessary because int64 types are getting converted to
-        # float64 by qiime2.Metadata...
-        return {
-            'gradient_position': 'int64',
-            'gradient_pos_amt': 'int64'
-        }
-
-    def qiime2_metadata(self):
-        df = self.metadata_df()
-        df.set_index('sample-id', inplace=True)
-
-        return qiime2.Metadata(df)
-
-    def qsip2_metadata(self):
-        df = self.metadata_df()
-        file_format = QSIP2MetadataFormat()
-        with file_format.open() as fh:
-            df.to_csv(fh, index=False, sep='\t')
-
-        return file_format
-
-    def test_qsip2_metadata_to_qiime2_metadata(self):
-        transformer = self.get_transformer(
-            QSIP2MetadataFormat, qiime2.Metadata
+    def get_qsip_object(self):
+        pickle_fp = (
+            importlib.resources.files(__package__) /
+            'data' / 'qsip-data.pickle'
         )
 
-        qsip2_md = self.qsip2_metadata()
-        qiime2_md = transformer(qsip2_md)
+        transformer = self.get_transformer(QSIP2DataFormat, RS4)
 
-        qsip2_md_df = qsip2_md._to_dataframe()
-        qiime2_md_df = qiime2_md.to_dataframe().reset_index()
-        qiime2_md_df = qiime2_md_df.astype(self.metadata_df_types())
+        return transformer(QSIP2DataFormat(pickle_fp, mode='r'))
 
-        assert_frame_equal(qsip2_md_df, qiime2_md_df)
+    def test_object_to_pickle_file_and_back(self):
+        from_object_transformer = self.get_transformer(RS4, QSIP2DataFormat)
+        from_format_transformer = self.get_transformer(QSIP2DataFormat, RS4)
 
-    def test_qiime2_metadata_qsip2_metadata(self):
-        transformer = self.get_transformer(
-            qiime2.Metadata, QSIP2MetadataFormat
+        qsip_object = self.get_qsip_object()
+        round_trip_qsip_object = from_format_transformer(
+            from_object_transformer(qsip_object)
         )
 
-        qiime2_md = self.qiime2_metadata()
-        qsip2_md = transformer(qiime2_md)
-
-        qsip2_md_df = qsip2_md._to_dataframe()
-        qiime2_md_df = qiime2_md.to_dataframe().reset_index()
-
-        assert_frame_equal(qsip2_md_df, qiime2_md_df)
+        self.assertEqual(
+            pickle.dumps(qsip_object), pickle.dumps(round_trip_qsip_object)
+        )

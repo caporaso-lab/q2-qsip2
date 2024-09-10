@@ -5,65 +5,85 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+
+import biom
 import pandas as pd
 from pandas.testing import assert_frame_equal
+import rpy2.robjects as ro
+from rpy2.robjects.methods import RS4
 
-from q2_qsip2.types._types import QSIP2Metadata
+import importlib.resources
+from pathlib import Path
+import pickle
+import tempfile
+
+import qiime2
 from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_qsip2.types import QSIP2MetadataFormat
+from q2_qsip2.types import QSIP2DataFormat
+from q2_qsip2.workflow import create_qsip_data
 
 
 class TestFormats(TestPluginBase):
     package = 'q2_qsip2.types.tests'
 
-    def valid_metadata_df(self):
-        return pd.DataFrame({
-            'sample-id': ['s1', 's2', 's3', 's4'],
-            'isotope': ['16O', '16O', '18O', '18O'],
-            'isotopolog': ['water', 'water', 'water', 'water'],
-            'gradient_position': [1, 2, 1, 2],
-            'gradient_pos_density': [0.8, 0.7, 0.9, 0.8],
-            'gradient_pos_amt': [100, 50, 110, 40],
-            'source_mat_id': ['a', 'a', 'b', 'b'],
-        })
+    def get_source_metadata(self):
+        fp = importlib.resources.files(__package__) / 'data' / 'source.tsv'
+        df = pd.read_csv(fp, sep='\t', index_col=0)
 
-    def test_valid_QSIP2MetadataFormat(self):
-        df = self.valid_metadata_df()
+        return qiime2.Metadata(df)
 
-        file_format = QSIP2MetadataFormat()
-        with file_format.open() as fh:
-            df.to_csv(fh, sep='\t')
+    def get_sample_metadata(self):
+        fp = importlib.resources.files(__package__) / 'data' / 'sample.tsv'
+        df = pd.read_csv(fp, sep='\t', index_col=0)
 
-        file_format.validate()
+        return qiime2.Metadata(df)
 
-    def test_missing_column(self):
-        df = self.valid_metadata_df()
-        df = df.drop(columns=['isotope'])
+    def get_feature_table(self):
+        fp = importlib.resources.files(__package__) / 'data' / 'feature.tsv'
+        df = pd.read_csv(fp, sep='\t', index_col=0)
 
-        file_format = QSIP2MetadataFormat()
-        with file_format.open() as fh:
-            df.to_csv(fh, sep='\t')
-
-        error_msg = (
-            '.*one or more required columns that are missing.*'
-            'isotope.*'
+        return biom.Table(
+            df.values, observation_ids=df.index, sample_ids=df.columns
         )
-        with self.assertRaisesRegex(ValidationError, error_msg):
-            file_format.validate()
 
-    def test_misnamed_column(self):
-        df = self.valid_metadata_df()
-        df = df.rename(columns={'gradient_pos_amt': 'gradient_pos_amount'})
+    def test_valid_QSIP2DataFormat_from_files(self):
+        source_md = self.get_source_metadata()
+        sample_md = self.get_sample_metadata()
+        table = self.get_feature_table()
 
-        file_format = QSIP2MetadataFormat()
-        with file_format.open() as fh:
-            df.to_csv(fh, sep='\t')
+        qsip_object = create_qsip_data(table, sample_md, source_md)
 
-        error_msg = (
-            '.*one or more required columns that are missing.*'
-            'gradient_pos_amt.*'
+        transformer = self.get_transformer(
+            RS4, QSIP2DataFormat
         )
-        with self.assertRaisesRegex(ValidationError, error_msg):
-            file_format.validate()
+        format = transformer(qsip_object)
+
+        format.validate()
+
+    def test_valid_QSIP2DataFormat_from_pickle(self):
+        pickle_fp = (
+            importlib.resources.files(__package__) /
+            'data' / 'qsip-data.pickle'
+        )
+
+        format = QSIP2DataFormat(pickle_fp, mode='r')
+
+        format.validate()
+
+    def test_invalid_QSIP2DataFormat(self):
+        # create useless rpy2 object to pickle
+        vector = ro.r("c('Q', 'I', 'I', 'M', 'E', '2')")
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            fp = Path(tempdir) / 'qsip-data.pickle'
+
+            with open(fp, 'wb') as fh:
+                pickle.dump(vector, fh)
+
+            format = QSIP2DataFormat(fp, mode='r')
+
+            msg = 'There was a problem loading your qSIP2 data.*'
+            with self.assertRaisesRegex(ValidationError, msg):
+                format.validate()

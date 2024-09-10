@@ -7,11 +7,11 @@
 # ----------------------------------------------------------------------------
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_qsip2.types import QSIP2Metadata
+from q2_qsip2.types import QSIP2Data
 
 
 class TestTypes(TestPluginBase):
     package = 'q2_qsip2.types.tests'
 
-    def test_QSIP2Metadata_type_is_registered(self):
-        self.assertRegisteredSemanticType(QSIP2Metadata)
+    def test_QSIP2Data_type_is_registered(self):
+        self.assertRegisteredSemanticType(QSIP2Data)
