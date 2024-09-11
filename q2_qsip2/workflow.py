@@ -23,7 +23,7 @@ from q2_qsip2._wrangling import (
     _extract_source_metadata
 )
 
-importr('qSIP2')
+qsip2 = importr('qSIP2')
 importr('S7')
 
 
@@ -108,16 +108,16 @@ def create_qsip_data(
 
     # construct R objects
     with (ro.default_converter + pandas2ri.converter).context():
-        R_source_obj = ro.r['qsip_source_data'](
+        R_source_obj = qsip2.qsip_source_data(
             source_df, source_mat_id=source_index_name
         )
-        R_sample_obj = ro.r['qsip_sample_data'](
+        R_sample_obj = qsip2.qsip_sample_data(
             sample_df, sample_id=sample_index_name,
         )
-        R_feature_obj = ro.r['qsip_feature_data'](
+        R_feature_obj = qsip2.qsip_feature_data(
            table_df, feature_id='ASV'
         )
-        R_qsip_obj = ro.r['qsip_data'](
+        R_qsip_obj = qsip2.qsip_data(
             source_data = R_source_obj,
             sample_data = R_sample_obj,
             feature_data = R_feature_obj
