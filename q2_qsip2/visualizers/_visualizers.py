@@ -18,21 +18,31 @@ from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
 qsip2 = importr('qSIP2')
 
 def plot_weighted_average_density(
-    output_dir: str, qsip_object: RS4, group: Optional[str] = None
+    output_dir: str, qsip_data: RS4, group: Optional[str] = None
 ) -> None:
     '''
     '''
-    plot = qsip2.plot_source_wads(qsip_object, group=group)
+    plot = qsip2.plot_source_wads(qsip_data, group=group)
 
     _ggplot2_object_to_visualization(
         plot, Path(output_dir), width=10, height=4
     )
 
 
-def plot_sample_curves(output_dir: str, qsip_object: RS4) -> None:
+def plot_sample_curves(output_dir: str, qsip_data: RS4) -> None:
     '''
     '''
-    plot = qsip2.plot_sample_curves(qsip_object)
+    plot = qsip2.plot_sample_curves(qsip_data)
+
+    _ggplot2_object_to_visualization(
+        plot, Path(output_dir), width=10, height=10
+    )
+
+
+def plot_density_outliers(output_dir: str, qsip_data: RS4) -> None:
+    '''
+    '''
+    plot = qsip2.plot_density_outliers(qsip_data)
 
     _ggplot2_object_to_visualization(
         plot, Path(output_dir), width=10, height=10

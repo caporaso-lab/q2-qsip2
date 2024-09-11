@@ -15,7 +15,7 @@ from q2_qsip2 import __version__
 from q2_qsip2.workflow import standard_workflow, create_qsip_data
 from q2_qsip2.types import QSIP2Data
 from q2_qsip2.visualizers._visualizers import (
-    plot_weighted_average_density, plot_sample_curves
+    plot_weighted_average_density, plot_sample_curves, plot_density_outliers
 )
 
 
@@ -100,13 +100,13 @@ plugin.methods.register_function(
 plugin.visualizers.register_function(
     function=plot_weighted_average_density,
     inputs={
-        'qsip_object': QSIP2Data
+        'qsip_data': QSIP2Data
     },
     parameters={
         'group': Str
     },
     input_descriptions={
-        'qsip_object': 'The qSIP data for which to plot the weighted average '
+        'qsip_data': 'The qSIP data for which to plot the weighted average '
                        'densities.'
     },
     parameter_descriptions={
@@ -121,15 +121,31 @@ plugin.visualizers.register_function(
 plugin.visualizers.register_function(
     function=plot_sample_curves,
     inputs={
-        'qsip_object': QSIP2Data
+        'qsip_data': QSIP2Data
     },
     parameters={},
     input_descriptions={
-        'qsip_object': 'The qSIP data for which to plot the per-sample density '
+        'qsip_data': 'The qSIP data for which to plot the per-source density '
                        'curves.'
     },
     parameter_descriptions={},
-    name='Plot per-sample density curves.',
+    name='Plot per-source density curves.',
+    description=('Placeholder'),
+    citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=plot_density_outliers,
+    inputs={
+        'qsip_data': QSIP2Data
+    },
+    parameters={},
+    input_descriptions={
+        'qsip_data': 'The qSIP data for which to plot the per-source density '
+                       'outliers.'
+    },
+    parameter_descriptions={},
+    name='Plot per-source density outliers.',
     description=('Placeholder'),
     citations=[],
 )
