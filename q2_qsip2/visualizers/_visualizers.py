@@ -18,6 +18,7 @@ from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
 
 qsip2 = importr('qSIP2')
 
+
 def plot_weighted_average_densities(
     output_dir: str, qsip_data: RS4, group: Optional[str] = None
 ) -> None:

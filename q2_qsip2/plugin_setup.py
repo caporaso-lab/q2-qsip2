@@ -8,7 +8,7 @@
 
 import importlib
 
-from qiime2.plugin import Bool, Citations, List, Metadata, Plugin, Str
+from qiime2.plugin import Citations, List, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__

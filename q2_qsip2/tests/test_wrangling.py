@@ -41,7 +41,7 @@ class WranglingTests(TestPluginBase):
             'source-level-data': ['x', 'y'],
         })
 
-        self.assertTrue( exp.equals(extracted) )
+        self.assertTrue(exp.equals(extracted))
 
     def metadata_to_validate(self):
         df = pd.DataFrame({
@@ -58,6 +58,7 @@ class WranglingTests(TestPluginBase):
             'isotope': None,
             'isotopolog': 'my-isotopolog-col',
         }
+
     def test_validate_metadata_columns(self):
         metadata = self.metadata_to_validate()
         columns_mapping = self.metadata_column_mapping()

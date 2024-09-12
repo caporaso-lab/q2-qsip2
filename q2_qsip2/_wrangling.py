@@ -5,10 +5,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-import pandas as pd
 
-from collections import namedtuple
-from typing import NamedTuple, Optional
+from typing import Optional
 
 import qiime2
 
@@ -166,7 +164,7 @@ def _handle_metadata(
         metadata_type='source',
         extracted=extracted
     )
-    sample_metadata =_validate_metadata_columns(
+    sample_metadata = _validate_metadata_columns(
         sample_metadata,
         sample_column_mapping,
         metadata_type='sample',

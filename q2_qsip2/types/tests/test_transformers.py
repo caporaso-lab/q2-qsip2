@@ -5,15 +5,13 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-import pandas as pd
-from pandas.testing import assert_frame_equal
+
 import rpy2.robjects as ro
 from rpy2.robjects.methods import RS4
 
 import importlib.resources
 import pickle
 
-import qiime2
 from qiime2.plugin.testing import TestPluginBase
 
 from q2_qsip2.types import QSIP2DataFormat

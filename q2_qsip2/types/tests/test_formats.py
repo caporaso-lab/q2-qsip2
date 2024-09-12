@@ -8,7 +8,6 @@
 
 import biom
 import pandas as pd
-from pandas.testing import assert_frame_equal
 import rpy2.robjects as ro
 from rpy2.robjects.methods import RS4
 

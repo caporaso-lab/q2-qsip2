@@ -6,8 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import biom
-import pandas as pd
-import rpy2
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
 from rpy2.robjects.methods import RS4
@@ -20,7 +18,6 @@ import qiime2
 from q2_qsip2._wrangling import (
     _construct_column_mapping,
     _handle_metadata,
-    _extract_source_metadata
 )
 
 qsip2 = importr('qSIP2')
@@ -33,7 +30,6 @@ def standard_workflow(
 ) -> biom.Table:
 
     return table
-
 
 
 def create_qsip_data(
@@ -119,9 +115,9 @@ def create_qsip_data(
            table_df, feature_id='ASV'
         )
         R_qsip_obj = qsip2.qsip_data(
-            source_data = R_source_obj,
-            sample_data = R_sample_obj,
-            feature_data = R_feature_obj
+            source_data=R_source_obj,
+            sample_data=R_sample_obj,
+            feature_data=R_feature_obj
         )
 
     return R_qsip_obj

@@ -8,7 +8,6 @@
 
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_qsip2.visualizers._visualizers import plot_weighted_average_density
 
 class VisualizerTests(TestPluginBase):
     package = 'q2_qsip2.visualizers.tests'

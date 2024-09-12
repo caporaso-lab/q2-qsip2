@@ -5,12 +5,11 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-import pandas as pd
+
 import rpy2.robjects as ro
 
 import pickle
 
-import qiime2
 from qiime2.plugin import ValidationError
 import qiime2.plugin.model as model
 

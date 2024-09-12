@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import SemanticType, ValidationError
+from qiime2.plugin import SemanticType
 
 
 QSIP2Data = SemanticType('QSIP2Data')
