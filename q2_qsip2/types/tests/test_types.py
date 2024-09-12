@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+
 from qiime2.plugin.testing import TestPluginBase
 
 from q2_qsip2.types import QSIP2Data
