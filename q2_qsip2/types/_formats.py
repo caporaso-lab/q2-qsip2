@@ -15,6 +15,7 @@ from qiime2.plugin import ValidationError
 import qiime2.plugin.model as model
 
 
+# TODO: communicate warning about using pickled data
 class QSIP2DataFormat(model.BinaryFileFormat):
     package = 'q2_qsip2.types.tests'
 
