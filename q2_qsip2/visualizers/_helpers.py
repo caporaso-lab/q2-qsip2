@@ -30,5 +30,4 @@ def _ggplot2_object_to_visualization(
         device='svg',
         width=width,
         height=height,
-        # units='px'
     )

@@ -8,14 +8,15 @@
 
 import importlib
 
-from qiime2.plugin import Bool, Citations, Metadata, Plugin, Str
+from qiime2.plugin import Bool, Citations, List, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
 from q2_qsip2.workflow import standard_workflow, create_qsip_data
 from q2_qsip2.types import QSIP2Data
 from q2_qsip2.visualizers._visualizers import (
-    plot_weighted_average_density, plot_sample_curves, plot_density_outliers
+    plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
+    show_comparison_groups
 )
 
 
@@ -91,14 +92,14 @@ plugin.methods.register_function(
     output_descriptions={
         'qsip_data': 'Placeholder.'
     },
-    name='Bundle qSIP metadata and feature table.',
+    name='Bundle your qSIP metadata and feature table.',
     description=(
         'Placeholder.'
     )
 )
 
 plugin.visualizers.register_function(
-    function=plot_weighted_average_density,
+    function=plot_weighted_average_densities,
     inputs={
         'qsip_data': QSIP2Data
     },
@@ -107,14 +108,16 @@ plugin.visualizers.register_function(
     },
     input_descriptions={
         'qsip_data': 'The qSIP data for which to plot the weighted average '
-                       'densities.'
+                     'densities.'
     },
     parameter_descriptions={
-        'group': 'A source-level metadata column used to facet the '
-                 'plot of weighted average densities.'
+        'group': 'A source-level metadata column used to facet the plot.'
     },
     name='Plot weighted average densities.',
-    description=('Placeholder'),
+    description=(
+        'Plots the per-source weighted average density, colored by isotope '
+        'and optionally faceted by the source-level metadata column `group`.'
+    ),
     citations=[],
 )
 
@@ -125,12 +128,13 @@ plugin.visualizers.register_function(
     },
     parameters={},
     input_descriptions={
-        'qsip_data': 'The qSIP data for which to plot the per-source density '
-                       'curves.'
+        'qsip_data': 'The qsip data artifact.'
     },
     parameter_descriptions={},
     name='Plot per-source density curves.',
-    description=('Placeholder'),
+    description=(
+        'Plots gradient position by relative amount of DNA, faceted by source.'
+    ),
     citations=[],
 )
 
@@ -141,12 +145,37 @@ plugin.visualizers.register_function(
     },
     parameters={},
     input_descriptions={
-        'qsip_data': 'The qSIP data for which to plot the per-source density '
-                       'outliers.'
+        'qsip_data': 'The qsip data artifact.'
     },
     parameter_descriptions={},
     name='Plot per-source density outliers.',
-    description=('Placeholder'),
+    description=(
+        'Plots gradient position by density, faceted by source, and performs '
+        'Cook\'s outlier detection.'
+    ),
+    citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=show_comparison_groups,
+    inputs={
+        'qsip_data': QSIP2Data
+    },
+    parameters={
+        'groups': List[Str]
+    },
+    input_descriptions={
+        'qsip_data': 'The qsip data artifact.'
+    },
+    parameter_descriptions={
+        'groups': 'The names of one or more source-level metadata columns used '
+                  'to further subdivide the labeled and unlabeled samples.'
+    },
+    name='Show available comparison groupings.',
+    description=(
+        'Displays a table of source-level ids grouped in columns by isotope '
+        'and in rows by the given groups.'
+    ),
     citations=[],
 )
 

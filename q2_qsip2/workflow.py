@@ -35,6 +35,7 @@ def standard_workflow(
     return table
 
 
+
 def create_qsip_data(
     table: biom.Table,
     sample_metadata: qiime2.Metadata,
@@ -106,7 +107,7 @@ def create_qsip_data(
     table_df.index.name = 'ASV'
     table_df.reset_index(inplace=True)
 
-    # construct R objects
+    # construct qsip object
     with (ro.default_converter + pandas2ri.converter).context():
         R_source_obj = qsip2.qsip_source_data(
             source_df, source_mat_id=source_index_name
