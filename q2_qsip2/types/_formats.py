@@ -15,16 +15,19 @@ import qiime2.plugin.model as model
 
 
 # TODO: communicate warning about using pickled data
-class QSIP2DataFormat(model.BinaryFileFormat):
+class QSIP2DataFormatBase(model.BinaryFileFormat):
     package = 'q2_qsip2.types.tests'
+
+    def stage_specific_validation_method(self, qsip_data_obj):
+        pass
 
     def _validate_(self, level):
         with self.open() as fh:
             qsip_data_obj = pickle.load(fh)
 
         try:
-            # TODO: why not implemented in R package?
             ro.r['validate'](qsip_data_obj)
+            self.stage_specific_validation_method(qsip_data_obj)
         except Exception as e:
             msg = (
                 'There was a problem loading your qSIP2 data. See the below '
@@ -33,6 +36,40 @@ class QSIP2DataFormat(model.BinaryFileFormat):
             raise ValidationError(msg)
 
 
-QSIP2DataDirectoryFormat = model.SingleFileDirectoryFormat(
-    'QSIP2DataDirectoryFormat', 'qsip-data.pickle', QSIP2DataFormat
+class QSIP2DataUnfilteredFormat(QSIP2DataFormatBase):
+    def stage_specific_validation_method(self, qsip_data_obj):
+        # TODO: update once implemented in R
+        pass
+
+
+QSIP2DataUnfilteredDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2DataUnfilteredDirectoryFormat',
+    'qsip-data.pickle',
+    QSIP2DataUnfilteredFormat
+)
+
+
+class QSIP2DataFilteredFormat(QSIP2DataFormatBase):
+    def stage_speicif_validation_method(self, qsip_data_obj):
+        # TODO: update once implemented in R
+        pass
+
+
+QSIP2DataFilteredDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2DataFilteredDirectoryFormat',
+    'qsip-data.pickle',
+    QSIP2DataFilteredFormat
+)
+
+
+class QSIP2DataEAFFormat(QSIP2DataFormatBase):
+    def stage_specific_validation_method(self, qsip_data_obj):
+        # TODO: update once implemented in R
+        pass
+
+
+QSIP2DataEAFDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2DataEAFDirectoryFormat',
+    'qsip-data.pickle',
+    QSIP2DataEAFFormat
 )

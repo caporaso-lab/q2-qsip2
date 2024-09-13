@@ -14,7 +14,7 @@ import pickle
 
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_qsip2.types import QSIP2DataFormat
+from q2_qsip2.types import QSIP2DataUnfilteredFormat
 
 
 class TestTransformers(TestPluginBase):
@@ -26,13 +26,17 @@ class TestTransformers(TestPluginBase):
             'data' / 'qsip-data.pickle'
         )
 
-        transformer = self.get_transformer(QSIP2DataFormat, RS4)
+        transformer = self.get_transformer(QSIP2DataUnfilteredFormat, RS4)
 
-        return transformer(QSIP2DataFormat(pickle_fp, mode='r'))
+        return transformer(QSIP2DataUnfilteredFormat(pickle_fp, mode='r'))
 
     def test_object_to_pickle_file_and_back(self):
-        from_object_transformer = self.get_transformer(RS4, QSIP2DataFormat)
-        from_format_transformer = self.get_transformer(QSIP2DataFormat, RS4)
+        from_object_transformer = self.get_transformer(
+            RS4, QSIP2DataUnfilteredFormat
+        )
+        from_format_transformer = self.get_transformer(
+            QSIP2DataUnfilteredFormat, RS4
+        )
 
         qsip_object = self.get_qsip_object()
         ro.r['validate'](qsip_object)

@@ -13,7 +13,7 @@ from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
 from q2_qsip2.workflow import standard_workflow, create_qsip_data
-from q2_qsip2.types import QSIP2Data
+from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
     show_comparison_groups
@@ -40,7 +40,7 @@ plugin.methods.register_function(
     function=standard_workflow,
     inputs={
         'table': FeatureTable[Frequency],
-        'qsip_metadata': QSIP2Data,
+        'qsip_metadata': QSIP2Data[Unfiltered],
     },
     parameters={},
     outputs=[
@@ -76,7 +76,7 @@ plugin.methods.register_function(
         'gradient_pos_amt_column': Str,
     },
     outputs=[
-        ('qsip_data', QSIP2Data)
+        ('qsip_data', QSIP2Data[Unfiltered])
     ],
     input_descriptions={},
     parameter_descriptions={
@@ -101,7 +101,7 @@ plugin.methods.register_function(
 plugin.visualizers.register_function(
     function=plot_weighted_average_densities,
     inputs={
-        'qsip_data': QSIP2Data
+        'qsip_data': QSIP2Data[Unfiltered]
     },
     parameters={
         'group': Str
@@ -124,7 +124,7 @@ plugin.visualizers.register_function(
 plugin.visualizers.register_function(
     function=plot_sample_curves,
     inputs={
-        'qsip_data': QSIP2Data
+        'qsip_data': QSIP2Data[Unfiltered]
     },
     parameters={},
     input_descriptions={
@@ -141,7 +141,7 @@ plugin.visualizers.register_function(
 plugin.visualizers.register_function(
     function=plot_density_outliers,
     inputs={
-        'qsip_data': QSIP2Data
+        'qsip_data': QSIP2Data[Unfiltered]
     },
     parameters={},
     input_descriptions={
@@ -159,7 +159,7 @@ plugin.visualizers.register_function(
 plugin.visualizers.register_function(
     function=show_comparison_groups,
     inputs={
-        'qsip_data': QSIP2Data
+        'qsip_data': QSIP2Data[Unfiltered]
     },
     parameters={
         'groups': List[Str]
