@@ -18,7 +18,7 @@ from q2_qsip2.workflow import (
 )
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
-    show_comparison_groups
+    show_comparison_groups, plot_filtered_features
 )
 
 
@@ -227,6 +227,24 @@ plugin.visualizers.register_function(
     description=(
         'Displays a table of source-level ids grouped in columns by isotope '
         'and in rows by the given groups.'
+    ),
+    citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=plot_filtered_features,
+    inputs={
+        'filtered_qsip_data': QSIP2Data[Filtered]
+    },
+    parameters={},
+    input_descriptions={
+        'filtered_qsip_data': 'Your filtered qsip data artifact.'
+    },
+    parameter_descriptions={},
+    name='Visualize feature retention.',
+    description=(
+        'Displays per-source stacked bar charts of feature retention by '
+        'relative abundance and feature count.'
     ),
     citations=[],
 )

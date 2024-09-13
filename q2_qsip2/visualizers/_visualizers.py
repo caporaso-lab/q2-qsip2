@@ -106,3 +106,21 @@ def show_comparison_groups(
         df = qsip2.show_comparison_groups(qsip_data, groups_vector)
 
     df.to_html(Path(output_dir) / 'index.html')
+
+
+def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
+    '''
+    Displays per-source stacked bar charts showing the retention of features.
+
+    Parameters
+    ----------
+    output_dir : str
+        The root directory of the visualization loaded into the browser.
+    qsip_data : RS4
+        The "qsip_data" object.
+    '''
+    plot = qsip2.plot_filter_gradient_position(filtered_qsip_data)
+
+    _ggplot2_object_to_visualization(
+        plot, Path(output_dir), width=10, height=10
+    )
