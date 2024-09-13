@@ -122,3 +122,50 @@ def create_qsip_data(
         )
 
     return R_qsip_obj
+
+def subset_and_filter(
+    qsip_data: RS4,
+    unlabeled_sources: list[str],
+    labeled_sources: list[str],
+    min_unlabeled_sources: int,
+    min_labeled_sources: int,
+    min_unlabeled_fractions: int,
+    min_labeled_fractions: int
+) -> RS4:
+    '''
+    Subsets the qsip data object to include only those sources listed in
+    `unlabeled_sources` and `labeled_sources`, and to include only those
+    features that pass the minimum prevalence parameters.
+
+    Parameters
+    ----------
+    qsip_data : RS4
+        The "qsip_data" object.
+    unlabeled_sources : list[str]
+        The IDs of the unlabeled sources to retain.
+    labeled_sources : list[str]
+        The IDs of the labeled sources to retain.
+    min_unlabeled_sources : int
+        The minimum number of unlabeled sources a feature must be present in
+        to be retained.
+    min_labeled_sources : int
+        The minimum number of labeled sources a feature must be present in
+        to be retained.
+    min_unlabeled_fractions : int
+        The minimum number of fractions a feature must be present in
+        to be considered present in an unlabeled source.
+    min_labeled_fractions : int
+        The minimum number of fractions a feature must be present in
+        to be considered present in a labeled source.
+    '''
+    filtered_qsip_data = qsip2.run_feature_filter(
+        qsip_data,
+        unlabeled_source_mat_ids=unlabeled_sources,
+        labeled_source_mat_ids=labeled_sources,
+        min_unlabeled_sources=min_unlabeled_sources,
+        min_labeled_sources=min_labeled_sources,
+        min_unlabeled_fractions=min_unlabeled_fractions,
+        min_labeled_fractions=min_labeled_fractions
+    )
+
+    return filtered_qsip_data

@@ -8,12 +8,14 @@
 
 import importlib
 
-from qiime2.plugin import Citations, List, Metadata, Plugin, Str
+from qiime2.plugin import Citations, Int, List, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
-from q2_qsip2.workflow import standard_workflow, create_qsip_data
 from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
+from q2_qsip2.workflow import (
+    standard_workflow, create_qsip_data, subset_and_filter
+)
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
     show_comparison_groups
@@ -78,7 +80,9 @@ plugin.methods.register_function(
     outputs=[
         ('qsip_data', QSIP2Data[Unfiltered])
     ],
-    input_descriptions={},
+    input_descriptions={
+        'table': 'The qSIP feature table.'
+    },
     parameter_descriptions={
         'sample_metadata': 'The sample-level metadata.',
         'source_metadata': 'The source-level metadata.',
@@ -93,6 +97,54 @@ plugin.methods.register_function(
         'qsip_data': 'Placeholder.'
     },
     name='Bundle your qSIP metadata and feature table.',
+    description=(
+        'Placeholder.'
+    )
+)
+
+plugin.methods.register_function(
+    function=subset_and_filter,
+    inputs={
+        'qsip_data': QSIP2Data[Unfiltered]
+    },
+    parameters={
+        'unlabeled_sources': List[Str],
+        'labeled_sources': List[Str],
+        'min_unlabeled_sources': Int,
+        'min_labeled_sources': Int,
+        'min_unlabeled_fractions': Int,
+        'min_labeled_fractions': Int
+    },
+    outputs=[
+        ('filtered_qsip_data', QSIP2Data[Filtered])
+    ],
+    input_descriptions={
+        'qsip_data': 'Your unfiltered qSIP2 data.'
+    },
+    parameter_descriptions={
+        'unlabeled_sources': 'The IDs of the unlabeled sources to retain.',
+        'labeled_sources': 'The IDs of the labeled sources to retain.',
+        'min_unlabeled_sources': (
+            'The minimum number of unlabeled sources a feature must be '
+            'present in to be retained.'
+        ),
+        'min_labeled_sources': (
+            'The minimum number of labeled sources a feature must be present '
+            'in to be retained.'
+        ),
+        'min_unlabeled_fractions': (
+            'The minimum number of fractions a feature must be present in '
+            'to be considered present in an unlabeled source.'
+        ),
+        'min_labeled_fractions': (
+            'The minimum number of fractions a feature must be present in '
+            'to be considered present in a labeled source.'
+        )
+    },
+    output_descriptions={
+        'filtered_qsip_data': 'Your subsetted and filtered qSIP2 data.'
+    },
+    name='Subset sources and filter features to prepare for comparison.',
     description=(
         'Placeholder.'
     )
