@@ -54,7 +54,7 @@ def _4(ff: QSIP2DataFilteredFormat) -> RS4:
 
 @plugin.register_transformer
 def _5(qsip_object: RS4) -> QSIP2DataEAFFormat:
-    ff = QSIP2DataFilteredFormat()
+    ff = QSIP2DataEAFFormat()
     return _qsip_object_to_format(qsip_object, ff)
 
 

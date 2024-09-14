@@ -8,17 +8,18 @@
 
 import importlib
 
-from qiime2.plugin import Citations, Int, List, Metadata, Plugin, Str
+from qiime2.plugin import Citations, Float, Int, List, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 
 from q2_qsip2 import __version__
 from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
 from q2_qsip2.workflow import (
-    standard_workflow, create_qsip_data, subset_and_filter
+    standard_workflow, create_qsip_data, subset_and_filter,
+    resample_and_calculate_EAF
 )
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
-    show_comparison_groups, plot_filtered_features
+    show_comparison_groups, plot_filtered_features, plot_excess_atom_fractions
 )
 
 
@@ -34,32 +35,7 @@ plugin = Plugin(
         "data."
     ),
     short_description="Analyze qSIP data.",
-    # TODO
     citations=[citations['Caporaso-Bolyen-2024']]
-)
-
-plugin.methods.register_function(
-    function=standard_workflow,
-    inputs={
-        'table': FeatureTable[Frequency],
-        'qsip_metadata': QSIP2Data[Unfiltered],
-    },
-    parameters={},
-    outputs=[
-        ('output_table', FeatureTable[Frequency])
-    ],
-    input_descriptions={
-        'table': 'The feature table.',
-        'qsip_metadata': 'The qSIP metadata.',
-    },
-    parameter_descriptions={},
-    output_descriptions={
-        'output_table': 'Placeholder.'
-    },
-    name='Run the standard qSIP2 workflow.',
-    description=(
-        'Placeholder.'
-    )
 )
 
 plugin.methods.register_function(
@@ -99,7 +75,8 @@ plugin.methods.register_function(
     name='Bundle your qSIP metadata and feature table.',
     description=(
         'Placeholder.'
-    )
+    ),
+    citations=[]
 )
 
 plugin.methods.register_function(
@@ -147,7 +124,40 @@ plugin.methods.register_function(
     name='Subset sources and filter features to prepare for comparison.',
     description=(
         'Placeholder.'
-    )
+    ),
+    citations=[]
+)
+
+plugin.methods.register_function(
+    function=resample_and_calculate_EAF,
+    inputs={
+        'filtered_qsip_data': QSIP2Data[Filtered]
+    },
+    parameters={
+        'resamples': Int,
+        'random_seed': Int,
+    },
+    outputs=[
+        ('eaf_qsip_data', QSIP2Data[EAF])
+    ],
+    input_descriptions={
+        'filtered_qsip_data': 'Your filtered qSIP2 data.'
+    },
+    parameter_descriptions={
+        'resamples': 'The number of bootstrap resamplings to perform.',
+        'random_seed': 'The random seed to use during resampling.',
+    },
+    output_descriptions={
+        'eaf_qsip_data': (
+            'Your qSIP2 data with excess atom fraction (EAF) values '
+            'calculated on a per-taxon basis.'
+        )
+    },
+    name='Calculate excess atom fraction (EAF).',
+    description=(
+        'Placeholder.'
+    ),
+    citations=[]
 )
 
 plugin.visualizers.register_function(
@@ -247,6 +257,36 @@ plugin.visualizers.register_function(
         'relative abundance and feature count.'
     ),
     citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=plot_excess_atom_fractions,
+    inputs={
+        'eaf_qsip_data': QSIP2Data[EAF],
+    },
+    parameters={
+        'num_top': Int,
+        'confidence_interval': Float
+    },
+    input_descriptions={
+        'eaf_qsip_data': 'Your EAF-calculated qSIP2 data.',
+    },
+    parameter_descriptions={
+        'num_top': (
+            'The number of taxa displayed, selected in order of decreasing '
+            'excess atom fraction.'
+        ),
+        'confidence_interval': (
+            'The confidence interval to display from the bootstrapped excess '
+            'atom fractions.'
+        )
+    },
+    name='Visualize per-taxon excess atom fractions.',
+    description=(
+        'Plots per-taxon excess atom fractions with bootstrapped confidence '
+        'intervals.'
+    ),
+    citations=[]
 )
 
 importlib.import_module('q2_qsip2.types._deferred_setup')

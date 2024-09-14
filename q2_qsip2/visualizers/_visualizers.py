@@ -124,3 +124,34 @@ def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
     _ggplot2_object_to_visualization(
         plot, Path(output_dir), width=10, height=10
     )
+
+
+def plot_excess_atom_fractions(
+    output_dir: str,
+    eaf_qsip_data: RS4,
+    num_top: int,
+    confidence_interval: float = 0.9
+) -> None:
+    '''
+    Plots per-taxon excess atom fraction values.
+
+    Parameters
+    ----------
+    output_dir : str
+        The root directory of the visualization loaded into the browser.
+    qsip_data : RS4
+        The "qsip_data" object.
+    num_top : int
+        The number of taxa displayed taken in order of decreasing excess
+        atom fraction.
+    confidence_interval : float
+        The confidence interval to display from the bootstrapped excess atom
+        fraction values.
+    '''
+    plot = qsip2.plot_EAF_values(
+        eaf_qsip_data, top=num_top, confidence=confidence_interval, error='bar'
+    )
+
+    _ggplot2_object_to_visualization(
+        plot, Path(output_dir), width=10, height=10
+    )

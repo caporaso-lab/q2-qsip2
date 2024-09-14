@@ -127,10 +127,10 @@ def subset_and_filter(
     qsip_data: RS4,
     unlabeled_sources: list[str],
     labeled_sources: list[str],
-    min_unlabeled_sources: int,
-    min_labeled_sources: int,
-    min_unlabeled_fractions: int,
-    min_labeled_fractions: int
+    min_unlabeled_sources: int = 1,
+    min_labeled_sources: int = 1,
+    min_unlabeled_fractions: int = 1,
+    min_labeled_fractions: int = 1
 ) -> RS4:
     '''
     Subsets the qsip data object to include only those sources listed in
@@ -158,10 +158,13 @@ def subset_and_filter(
         The minimum number of fractions a feature must be present in
         to be considered present in a labeled source.
     '''
+    unlabeled_sources_vector = ro.vectors.StrVector(unlabeled_sources)
+    labeled_sources_vector = ro.vectors.StrVector(labeled_sources)
+
     filtered_qsip_data = qsip2.run_feature_filter(
         qsip_data,
-        unlabeled_source_mat_ids=unlabeled_sources,
-        labeled_source_mat_ids=labeled_sources,
+        unlabeled_source_mat_ids=unlabeled_sources_vector,
+        labeled_source_mat_ids=labeled_sources_vector,
         min_unlabeled_sources=min_unlabeled_sources,
         min_labeled_sources=min_labeled_sources,
         min_unlabeled_fractions=min_unlabeled_fractions,
@@ -169,3 +172,31 @@ def subset_and_filter(
     )
 
     return filtered_qsip_data
+
+
+def resample_and_calculate_EAF(
+    filtered_qsip_data: RS4,
+    resamples: int = 1000,
+    random_seed: int = 1,
+) -> RS4:
+    '''
+    Reseample and calculate excess atom fraction (EAF) for each feature.
+
+    Parameters
+    ----------
+    filtered_qsip_data : RS4
+        The filtered "qsip_data" object.
+    resamples : int
+        The number of bootstrap resamplings to perform.
+    random_seed : int
+        The random seed to use during resampling. Exposed for reproducibility.
+    '''
+    resampled_qsip_data = qsip2.run_resampling(
+        filtered_qsip_data,
+        resamples=resamples,
+        with_seed=random_seed
+    )
+
+    eaf_qsip_data = qsip2.run_EAF_calculations(resampled_qsip_data)
+
+    return eaf_qsip_data
