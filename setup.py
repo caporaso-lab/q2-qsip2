@@ -29,7 +29,7 @@ setup(
             ".plugin_setup:plugin"]
     },
     package_data={
-        "q2_qsip2": ["citations.bib"],
+        "q2_qsip2": ["citations.bib", "assets/index.html"],
         "q2_qsip2.tests": ["data/*"],
     },
     zip_safe=False,
