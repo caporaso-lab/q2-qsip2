@@ -185,7 +185,7 @@ sample density.
 
 ```shell
 qiime qsip2 plot-sample-curves \
-  --i-qsip-data qsip-data.qzv \
+  --i-qsip-data qsip-data.qza \
   --o-visualization sample-curves.qzv
 ```
 
