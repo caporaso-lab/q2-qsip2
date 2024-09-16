@@ -129,7 +129,7 @@ def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
 def plot_excess_atom_fractions(
     output_dir: str,
     eaf_qsip_data: RS4,
-    num_top: int,
+    num_top: int = 50,
     confidence_interval: float = 0.9
 ) -> None:
     '''
