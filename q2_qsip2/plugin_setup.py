@@ -14,8 +14,7 @@ from q2_types.feature_table import FeatureTable, Frequency
 from q2_qsip2 import __version__
 from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
 from q2_qsip2.workflow import (
-    standard_workflow, create_qsip_data, subset_and_filter,
-    resample_and_calculate_EAF
+    create_qsip_data, subset_and_filter, resample_and_calculate_EAF
 )
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
