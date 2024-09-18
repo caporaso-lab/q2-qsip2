@@ -4,10 +4,6 @@ A [QIIME 2](https://qiime2.org) plugin [developed](https://develop.qiime2.org) b
 
 ## Installation instructions
 
-**The following instructions are intended to be a starting point** and should be replaced when `q2-qsip2` is ready to share with others.
-They will enable you to install the most recent *development* version of `q2-qsip2`.
-Remember that *release* versions should be used for all "real" work (i.e., where you're not testing or prototyping) - if there aren't instructions for installing a release version of this plugin, it is probably not yet intended for use in practice.
-
 ### Install Prerequisites
 
 [Miniconda](https://conda.io/miniconda.html) provides the `conda` environment and package manager, and is currently the only supported way to install QIIME 2.
@@ -22,14 +18,15 @@ conda update conda
 ###  Install development version of `q2-qsip2`
 
 Next, you need to get into the top-level `q2-qsip2` directory.
-If you already have this (e.g., because you just created the plugin), this may be as simple as running `cd q2-qsip2`.
-If not, you'll need the `q2-qsip2` directory on your computer.
-How you do that will differ based on how the package is shared, and ideally the developer will update these instructions to be more specific (remember, these instructions are intended to be a starting point).
-For example, if it's maintained in a GitHub repository, you can achieve this by [cloning the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository).
+You can achieve this by [cloning the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository), for example with the command:
+
+```shell
+git clone https://github.com/colinvwood/q2-qsip2.git
+```
+
 Once you have the directory on your computer, change (`cd`) into it.
 
 If you're in a conda environment, deactivate it by running `conda deactivate`.
-
 
 Then, run:
 
@@ -78,6 +75,11 @@ You should be able to review the help text by running:
 ```shell
 qiime qsip2 --help
 ```
+
+## Accessing the usage tutorial
+
+You can find instructions for performing an example analysis with q2-qsip2 in the [tutorial](https://github.com/colinvwood/q2-qsip2/blob/main/tutorial/tutorial.md).
+The data files that you'll need to run that tutorial can be downloaded from [the directory containing the tutorial](https://github.com/colinvwood/q2-qsip2/tree/main/tutorial).
 
 Have fun! 😎
 
