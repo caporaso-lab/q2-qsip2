@@ -1,8 +1,5 @@
 name: Test and lint
 
-env: 
-  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-  
 on:
   pull_request:
     branches: ["main"]
@@ -29,6 +26,9 @@ jobs:
     - name: Install plugin
       shell: bash -l {0}
       run: make install
+      env: 
+        GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  
 
     - name: Run tests
       shell: bash -l {0}
