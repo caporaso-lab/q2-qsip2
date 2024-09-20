@@ -250,6 +250,13 @@ def _validate_metadata_columns(
             'or update your metadata to use the defaults.'
         )
 
+        if metadata_type == 'source':
+            error_string += (
+                '\n\nIf the column(s) exist in your sample-level metadata, '
+                'make sure that its values do not vary within each source.'
+            )
+
+
         raise ValueError(error_string)
 
     # otherwise if all columns present, change column names
