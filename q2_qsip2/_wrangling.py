@@ -256,7 +256,6 @@ def _validate_metadata_columns(
                 'make sure that its values do not vary within each source.'
             )
 
-
         raise ValueError(error_string)
 
     # otherwise if all columns present, change column names
