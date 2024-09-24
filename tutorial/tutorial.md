@@ -186,7 +186,7 @@ qiime qsip2 subset-and-filter \
 ```
 
 There are four prevalence filters we can apply to the feature table.
-Two of these, `--p-min-labeled-sources` and `--p-min-labeled-sources` filter features based on their prevalence across the retained sources.
+Two of these, `--p-min-unlabeled-sources` and `--p-min-labeled-sources` filter features based on their prevalence across the retained sources.
 The interpretation of the values provided in the above command is that if a feature is present in less than 6 unlabeled sources or less than 3 labeled sources, then it will be filtered.
 Because we decided to retain 6 and 3 unlabeled and labeled sources respectively, we are requiring retained features to present in *all* samples.
 The other two prevalence filters, `--p-min-unlabeled-fractions` and `--p-min-labeled-fractions` filter features based on fraction (sample) prevalence.
