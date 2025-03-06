@@ -9,5 +9,8 @@ dependencies:
     - r-svglite
     - r-gt
     - r-s7
+    # r-clock is a problematic qSIP2 dependency on macOS, including it
+    # here so that we can use conda's binaries
+    - r-clock
     - rpy2
     - pip
