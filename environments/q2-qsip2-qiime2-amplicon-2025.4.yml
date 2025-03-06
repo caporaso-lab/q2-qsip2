@@ -9,5 +9,6 @@ dependencies:
     - r-svglite
     - r-gt
     - r-s7
+	- r-clock
     - rpy2
     - pip
