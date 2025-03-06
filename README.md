@@ -21,7 +21,7 @@ Next, you need to get into the top-level `q2-qsip2` directory.
 You can achieve this by [cloning the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository), for example with the command:
 
 ```shell
-git clone https://github.com/colinvwood/q2-qsip2.git
+git clone https://github.com/caporaso-lab/q2-qsip2
 ```
 
 Once you have the directory on your computer, change (`cd`) into it.
