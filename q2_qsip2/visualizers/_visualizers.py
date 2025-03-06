@@ -119,7 +119,7 @@ def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
     qsip_data : RS4
         The "qsip_data" object.
     '''
-    plot = qsip2.plot_filter_gradient_position(filtered_qsip_data)
+    plot = qsip2.plot_filter_results(filtered_qsip_data)
 
     _ggplot2_object_to_visualization(
         plot, Path(output_dir), width=10, height=10
