@@ -31,7 +31,7 @@ If you're in a conda environment, deactivate it by running `conda deactivate`.
 Then, run:
 
 ```shell
-conda env create -n q2-qsip2-dev --file ./environments/q2-qsip2-qiime2-amplicon-2024.5.yml
+conda env create -n q2-qsip2-dev --file ./environments/q2-qsip2-qiime2-amplicon-2025.4.yml
 ```
 
 After this completes, activate the new environment you created by running:

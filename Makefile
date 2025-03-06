@@ -12,11 +12,9 @@ test: all
 	py.test
 
 REPO = jeffkimbrel/qSIP2
-HASH = fee266bb14836f7a6c45ef9ef11d451999936a3a
+HASH = b867c96aa7b72b72f47942f11dbcd18319cae8bc
 install: all
 	pip install .
-	conda install --yes r-devtools r-svglite r-gt rpy2 -c r
-	Rscript -e 'install.packages("S7", repos="https://cloud.r-project.org")'
 	Rscript -e 'devtools::install_github("$(REPO)", ref="$(HASH)")'
 
 dev: all
