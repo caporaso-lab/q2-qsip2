@@ -85,7 +85,7 @@ Have fun! 😎
 
 ## About
 
-The `q2-qsip2` Python package was [created from template](https://develop.qiime2.org/en/latest/plugins/tutorials/create-from-template.html).
+The `q2-qsip2` Python package was [created from template](https://develop.qiime2.org/en/stable/plugins/tutorials/create-from-template.html).
 To learn more about `q2-qsip2`, refer to the [project website](www.qiime2.org).
 To learn how to use QIIME 2, refer to the [QIIME 2 User Documentation](https://docs.qiime2.org).
 To learn QIIME 2 plugin development, refer to [*Developing with QIIME 2*](https://develop.qiime2.org).
