@@ -1,6 +1,6 @@
-name: q2-qsip2-qiime2-amplicon-2025.4
+name: q2-qsip2-qiime2-amplicon-2026.1
 channels:
-    - https://packages.qiime2.org/qiime2/2025.4/amplicon/passed
+    - https://packages.qiime2.org/qiime2/2026.1/amplicon/passed
     - conda-forge
     - bioconda
 dependencies:
