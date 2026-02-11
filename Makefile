@@ -12,7 +12,7 @@ test: all
 	py.test
 
 REPO = jeffkimbrel/qSIP2
-HASH = b867c96aa7b72b72f47942f11dbcd18319cae8bc
+HASH = af7e19757ae73c837507bbd672054bb9fdee74d5
 install: all
 	pip install .
 	Rscript -e 'devtools::install_github("$(REPO)", ref="$(HASH)")'
