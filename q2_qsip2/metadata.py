@@ -163,7 +163,7 @@ def _merge_metadatas(
         how='inner'
     )
 
-    merged_df.drop('original_source_identifier', axis=1)
+    merged_df.drop('original_source_identifier', axis=1, inplace=True)
     merged_df.set_index('original_sample_identifier', inplace=True)
     merged_df.index.name = 'id'
 

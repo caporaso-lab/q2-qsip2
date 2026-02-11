@@ -11,11 +11,13 @@ import importlib
 from qiime2.plugin import Citations, Float, Int, List, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
 from q2_types.metadata import ImmutableMetadata
+from q2_types.sample_data import SampleData
 
 from q2_qsip2 import __version__
-from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
+from q2_qsip2.types import SourceWADs
 from q2_qsip2.workflow import (
-    subset_and_filter, resample_and_calculate_EAF
+    calculate_weighted_average_densities, subset_and_filter,
+    resample_and_calculate_EAF,
 )
 from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
@@ -88,6 +90,32 @@ plugin.methods.register_function(
     citations=[]
 )
 
+plugin.methods.register_function(
+    function=calculate_weighted_average_densities,
+    inputs={
+        'table': FeatureTable[Frequency],
+    },
+    parameters={
+        'metadata': Metadata,
+    },
+    outputs=[
+        ('wads', SampleData[SourceWADs])
+    ],
+    input_descriptions={
+        'table': 'Your feature table.'
+    },
+    parameter_descriptions={
+        'metadata': 'Your standardized metadata.'
+    },
+    output_descriptions={
+        'wads': 'The per-source weighted average densities.'
+    },
+    name='Calculate weighted average densities.',
+    description='Calculate per-source weighted average densities.',
+    citations=[]
+)
+
+'''
 plugin.methods.register_function(
     function=subset_and_filter,
     inputs={
@@ -297,5 +325,6 @@ plugin.visualizers.register_function(
     ),
     citations=[]
 )
+'''
 
 importlib.import_module('q2_qsip2.types._deferred_setup')

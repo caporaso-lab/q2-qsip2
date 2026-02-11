@@ -15,6 +15,7 @@ from rpy2.robjects import pandas2ri
 
 import qiime2
 
+from q2_qsip2.metadata import standardize_metadata, _extract_source_metadata
 
 qsip2 = importr('qSIP2')
 importr('S7')
@@ -28,46 +29,19 @@ def standard_workflow(
     return table
 
 
-"""
-def create_qsip_data(
-    table: biom.Table,
-    sample_metadata: qiime2.Metadata,
-    source_metadata: Optional[qiime2.Metadata] = None,
-    source_mat_id_column: str = 'source_mat_id',
-    isotope_column: str = 'isotope',
-    isotopolog_column: str = 'isotopolog',
-    gradient_position_column: str = 'gradient_position',
-    gradient_pos_density_column: str = 'gradient_pos_density',
-    gradient_pos_amt_column: str = 'gradient_pos_amt',
-) -> RS4:
+def _create_qsip_data(table: biom.Table, metadata: qiime2.Metadata) -> RS4:
     '''
-    Validates and combines the sample-level and source-level metadata files.
-    If no source-level metadata file is provided it is first extracted from the
-    sample-level metadata.
+    Create a `qsip_data` R object from a feature table and standardized
+    metadata.
 
     Parameters
     ----------
     table : biom.Table
         The feature table containing sample ids on one axis and feature ids
         on the other.
-    sample_metadata : qiime2.Metadata
-        The sample-level metadata file.
-    source_metadata : qiime2.Metadata
-        The source-level metadata file.
-    source_mat_id_column : str
-        The name of the source material id column in the sample-level metadata.
-    isotope_column : str
-        The name of the isotope column in the source-level metadata.
-    isotopolog_column : str
-        The name of the isotopolog column in the source-level metadata.
-    gradient_position_column : str
-        The name of the gradient position column in the sample-level metadata.
-    gradient_pos_density_column : str
-        The name of the gradient position density column in the sample-level
-        metadata.
-    gradient_pos_amt_column : str
-        The name of the gradient position amount column in the sample-level
-        metadata.
+    metadata : qiime2.Metadata
+        The standardized sample-level metadata containing all required
+        sample-level and source-level variables.
 
     Returns
     -------
@@ -75,16 +49,12 @@ def create_qsip_data(
         The qSIP data object as created by the qSIP2 R package. This wraps the
         sample metadata, the source metadata, and the feature table.
     '''
+    # validate metadata by restandardizing
+    sample_metadata = standardize_metadata(sample_metadata=metadata)
 
-    # generate source-level metadata if necessary, and validate both it and
-    # sample-level metadata
-    column_mapping = _construct_column_mapping(locals())
-
-    source_metadata, sample_metadata = _handle_metadata(
-        sample_metadata,
-        source_metadata,
-        source_mat_id_column,
-        column_mapping
+    # split standardized metadata into sample- & source-level
+    source_metadata = _extract_source_metadata(
+        metadata, source_column='source_mat_id'
     )
 
     # convert to dataframes
@@ -118,7 +88,32 @@ def create_qsip_data(
         )
 
     return R_qsip_obj
-"""
+
+
+def calculate_weighted_average_densities(
+    table: biom.Table, metadata: qiime2.Metadata
+) -> pd.DataFrame:
+    '''
+    Calculate per-source weighted average densities (WADs).
+
+    Parameters
+    ----------
+    table : biom.Table
+        The feature table.
+    metadata : qiime2.Metadata
+        The standardized metadata.
+
+    Returns
+    -------
+    pd.DataFrame
+        The per-source WADs.
+    '''
+    R_qsip_obj = _create_qsip_data(table, metadata)
+
+    with (ro.default_converter + pandas2ri.converter).context():
+        source_wads_df = qsip2.source_wads(R_qsip_obj)
+
+    return source_wads_df
 
 
 def subset_and_filter(
@@ -198,10 +193,3 @@ def resample_and_calculate_EAF(
     eaf_qsip_data = qsip2.run_EAF_calculations(resampled_qsip_data)
 
     return eaf_qsip_data
-
-
-def calculate_weighted_average_densitites(
-    table: biom.Table,
-    standardized_metadata: qiime2.Metadata,
-) -> pd.DataFrame:
-    pass

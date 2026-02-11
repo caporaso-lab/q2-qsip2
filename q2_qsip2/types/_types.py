@@ -7,12 +7,7 @@
 # ----------------------------------------------------------------------------
 
 from qiime2.plugin import SemanticType
+from q2_types.sample_data import SampleData
 
 
-QSIP2Data = SemanticType('QSIP2Data', field_names='stage')
-
-Unfiltered = SemanticType('Unfiltered', variant_of=QSIP2Data.field['stage'])
-
-Filtered = SemanticType('Filtered', variant_of=QSIP2Data.field['stage'])
-
-EAF = SemanticType('EAF', variant_of=QSIP2Data.field['stage'])
+SourceWADs = SemanticType('SourceWADs', variant_of=SampleData.field['type'])
