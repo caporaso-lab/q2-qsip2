@@ -7,19 +7,14 @@
 # ----------------------------------------------------------------------------
 
 import biom
+import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
 from rpy2.robjects.methods import RS4
 from rpy2.robjects import pandas2ri
 
-from typing import Optional
-
 import qiime2
 
-from q2_qsip2._wrangling import (
-    _construct_column_mapping,
-    _handle_metadata,
-)
 
 qsip2 = importr('qSIP2')
 importr('S7')
@@ -33,6 +28,7 @@ def standard_workflow(
     return table
 
 
+"""
 def create_qsip_data(
     table: biom.Table,
     sample_metadata: qiime2.Metadata,
@@ -122,6 +118,7 @@ def create_qsip_data(
         )
 
     return R_qsip_obj
+"""
 
 
 def subset_and_filter(
@@ -201,3 +198,10 @@ def resample_and_calculate_EAF(
     eaf_qsip_data = qsip2.run_EAF_calculations(resampled_qsip_data)
 
     return eaf_qsip_data
+
+
+def calculate_weighted_average_densitites(
+    table: biom.Table,
+    standardized_metadata: qiime2.Metadata,
+) -> pd.DataFrame:
+    pass

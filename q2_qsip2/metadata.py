@@ -6,9 +6,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from typing import Optional
+import warnings
+
+import pandas as pd
 
 import qiime2
+from rachis.core.exceptions import RachisWarning
 
 
 SOURCE_COLUMNS = (
@@ -111,9 +114,118 @@ def _extract_source_metadata(
     return qiime2.Metadata(source_df)
 
 
-def _handle_metadata(
+def _merge_metadatas(
+    source_metadata: qiime2.Metadata,
     sample_metadata: qiime2.Metadata,
-    source_metadata: Optional[qiime2.Metadata],
+) -> qiime2.Metadata:
+    '''
+    Merges source- and sample-level metadata into a single sample-level
+    metadata object. The merged metadata object will have all source-level
+    variable values simply repeated for each sample within each source. Any
+    variables present in both the source- and sample-level metadata are
+    discarded from the source-level metadata before merging.
+
+    Note: it's assumed that `sample_metadata` and `source_metadata` have all
+    the expected default column namings.
+
+    Parameters
+    ----------
+    source_metadata : qiime2.Metadata
+        The source-level metadata.
+    sample_metadata : qiime2.Metadata
+        The sample-level metadata.
+
+    Returns
+    -------
+    qiime2.Metadata
+        The merged sample-level metadata.
+    '''
+    sample_md_df = sample_metadata.to_dataframe().reset_index(
+        names='original_sample_identifier'
+    )
+    source_md_df = source_metadata.to_dataframe().reset_index(
+        names='original_source_identifier'
+    )
+
+    _validate_source_id_overlap(
+        set(sample_md_df['source_mat_id']),
+        set(source_md_df['original_source_identifier'])
+    )
+
+    for column in set(sample_md_df.columns) & set(source_md_df.columns):
+        source_md_df.drop(column, axis=1, inplace=True)
+
+    merged_df = pd.merge(
+        sample_md_df,
+        source_md_df,
+        left_on='source_mat_id',
+        right_on='original_source_identifier',
+        how='inner'
+    )
+
+    merged_df.drop('original_source_identifier', axis=1)
+    merged_df.set_index('original_sample_identifier', inplace=True)
+    merged_df.index.name = 'id'
+
+    return qiime2.Metadata(merged_df)
+
+
+def _validate_source_id_overlap(
+    sample_level_source_ids: set, source_level_source_ids: set
+) -> None:
+    '''
+    Ensure that at least some source IDs overlap between the sample-level and
+    source-level metadata. Warn if the two sets are not equivalent.
+
+    Parameters
+    ----------
+    sample_level_source_ids : set[str]
+        The source IDs present in the sample-level metadata.
+    source_level_source_ids : set[str]
+        The source IDs present in the source-level metadata.
+
+    Raises
+    ------
+    ValueError
+        If no IDs are shared.
+
+    Warns
+    _____
+    RachisWarning
+        If the two sets of IDs are not equal.
+    '''
+    if (sample_level_source_ids & source_level_source_ids) == set():
+        msg = (
+            'There were no shared source IDs between the sample-level '
+            'and source-level metadata files.'
+        )
+        raise ValueError(msg)
+
+    if sample_level_source_ids != source_level_source_ids:
+        sample_only_ids = sample_level_source_ids - source_level_source_ids
+        source_only_ids = source_level_source_ids - sample_level_source_ids
+        msg = (
+            'There was a misalignment between the source IDs in the '
+            'sample-level metadata and those in the source-level metadata. '
+            'Proceeding with only those source IDs present in both.\n'
+        )
+        if sample_only_ids:
+            msg += (
+                'The following source IDs were found only in the sample-level '
+                f'metadata: {sample_only_ids}.\n'
+            )
+        if source_only_ids:
+            msg += (
+                'The following source IDs were found only in the source-level '
+                f'metadata: {source_only_ids}.\n'
+            )
+
+        warnings.warn(msg, RachisWarning)
+
+
+def _validate_and_rename_columns(
+    source_metadata: qiime2.Metadata,
+    sample_metadata: qiime2.Metadata,
     source_column: str,
     column_mapping: dict,
 ) -> tuple[qiime2.Metadata, qiime2.Metadata]:
@@ -123,10 +235,10 @@ def _handle_metadata(
 
     Parameters
     ----------
-    sample_metadata : qiime2.Metadata
-        The sample-level metadata.
     source_metadata : qiime2.Metadata or None
         The source-level metadata, if provided.
+    sample_metadata : qiime2.Metadata
+        The sample-level metadata.
     source_column : str
         The column name, in the sample metadata, of the source identifier for
         each sample.
@@ -268,3 +380,54 @@ def _validate_metadata_columns(
     md_df.set_index(index_name, inplace=True)
 
     return qiime2.Metadata(md_df)
+
+
+def standardize_metadata(
+    sample_metadata: qiime2.Metadata,
+    source_metadata: qiime2.Metadata | None = None,
+    source_mat_id_column: str = 'source_mat_id',
+    isotope_column: str = 'isotope',
+    isotopolog_column: str = 'isotopolog',
+    gradient_position_column: str = 'gradient_position',
+    gradient_pos_density_column: str = 'gradient_pos_density',
+    gradient_pos_amt_column: str = 'gradient_pos_amt',
+) -> qiime2.Metadata:
+    '''
+    Parameters
+    ----------
+    sample_metadata : qiime2.Metadata
+        The sample-level metadata file.
+    source_metadata : qiime2.Metadata | None
+        The optional source-level metadata file.
+    source_mat_id_column : str
+        The name of the source material id column in the sample-level metadata.
+    isotope_column : str
+        The name of the isotope column in the source-level metadata.
+    isotopolog_column : str
+        The name of the isotopolog column in the source-level metadata.
+    gradient_position_column : str
+        The name of the gradient position column in the sample-level metadata.
+    gradient_pos_density_column : str
+        The name of the gradient position density column in the sample-level
+        metadata.
+    gradient_pos_amt_column : str
+        The name of the gradient position amount column in the sample-level
+        metadata.
+
+    Returns
+    -------
+    ImmutabaleMetadata
+        The standardized sample-level qSIP metadata.
+    '''
+    column_mapping = _construct_column_mapping(locals())
+
+    source_metadata, sample_metadata = _validate_and_rename_columns(
+        source_metadata,
+        sample_metadata,
+        source_mat_id_column,
+        column_mapping,
+    )
+
+    merged_metadata = _merge_metadatas(source_metadata, sample_metadata)
+
+    return merged_metadata

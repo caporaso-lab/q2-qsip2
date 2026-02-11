@@ -10,12 +10,14 @@ import importlib
 
 from qiime2.plugin import Citations, Float, Int, List, Metadata, Plugin, Str
 from q2_types.feature_table import FeatureTable, Frequency
+from q2_types.metadata import ImmutableMetadata
 
 from q2_qsip2 import __version__
 from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
 from q2_qsip2.workflow import (
-    create_qsip_data, subset_and_filter, resample_and_calculate_EAF
+    subset_and_filter, resample_and_calculate_EAF
 )
+from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
     show_comparison_groups, plot_filtered_features, plot_excess_atom_fractions
@@ -38,10 +40,8 @@ plugin = Plugin(
 )
 
 plugin.methods.register_function(
-    function=create_qsip_data,
-    inputs={
-        'table': FeatureTable[Frequency]
-    },
+    function=standardize_metadata,
+    inputs={},
     parameters={
         'sample_metadata': Metadata,
         'source_metadata': Metadata,
@@ -53,27 +53,37 @@ plugin.methods.register_function(
         'gradient_pos_amt_column': Str,
     },
     outputs=[
-        ('qsip_data', QSIP2Data[Unfiltered])
+        ('standardized_metadata', ImmutableMetadata)
     ],
-    input_descriptions={
-        'table': 'The qSIP feature table.'
-    },
+    input_descriptions={},
     parameter_descriptions={
         'sample_metadata': 'The sample-level metadata.',
         'source_metadata': 'The source-level metadata.',
-        'source_mat_id_column': 'The name of the source id column.',
+        'source_mat_id_column': (
+            'The name of the source material id column in the sample-level '
+            'metadata.'
+        ),
         'isotope_column': 'The name of the isotope column.',
         'isotopolog_column': 'The name of the isotopolog column.',
         'gradient_position_column': 'The name of the gradient position column.',
-        'gradient_pos_density_column': 'The name of the density column.',
-        'gradient_pos_amt_column': 'The name of the amount column.',
+        'gradient_pos_density_column': (
+            'The name of the gradient position density column.'
+        ),
+        'gradient_pos_amt_column': (
+            'The name of the gradient position amount column.'
+        ),
     },
     output_descriptions={
-        'qsip_data': 'Placeholder.'
+        'standardized_metadata': 'The standardized qSIP2 metadata.'
     },
-    name='Bundle your qSIP metadata and feature table.',
+    name='Standardize qSIP2 metadata.',
     description=(
-        'Placeholder.'
+        'Standardizes and validates qSIP2 metadata by ensuring all requisite '
+        'variables are present, renaming variables to standardized names, and '
+        'combining separate source-level and sample-level metadata files, if '
+        'present. If a variable is present in both sample-level and '
+        'source-level metadata, the values in the sample-level metadata take '
+        'precedence.'
     ),
     citations=[]
 )

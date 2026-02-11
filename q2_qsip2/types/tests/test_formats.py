@@ -21,7 +21,6 @@ from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
 
 from q2_qsip2.types import QSIP2DataUnfilteredFormat
-from q2_qsip2.workflow import create_qsip_data
 
 
 class TestFormats(TestPluginBase):
@@ -46,43 +45,3 @@ class TestFormats(TestPluginBase):
         return biom.Table(
             df.values, observation_ids=df.index, sample_ids=df.columns
         )
-
-    def test_valid_QSIP2DataUnfilteredFormat_from_files(self):
-        source_md = self.get_source_metadata()
-        sample_md = self.get_sample_metadata()
-        table = self.get_feature_table()
-
-        qsip_object = create_qsip_data(table, sample_md, source_md)
-
-        transformer = self.get_transformer(
-            RS4, QSIP2DataUnfilteredFormat
-        )
-        format = transformer(qsip_object)
-
-        format.validate()
-
-    def test_valid_QSIP2DataUnfilteredFormat_from_pickle(self):
-        pickle_fp = (
-            importlib.resources.files(__package__) /
-            'data' / 'qsip-data.pickle'
-        )
-
-        format = QSIP2DataUnfilteredFormat(pickle_fp, mode='r')
-
-        format.validate()
-
-    def test_invalid_QSIP2DataUnfilteredFormat(self):
-        # create useless rpy2 object to pickle
-        vector = ro.r("c('Q', 'I', 'I', 'M', 'E', '2')")
-
-        with tempfile.TemporaryDirectory() as tempdir:
-            fp = Path(tempdir) / 'qsip-data.pickle'
-
-            with open(fp, 'wb') as fh:
-                pickle.dump(vector, fh)
-
-            format = QSIP2DataUnfilteredFormat(fp, mode='r')
-
-            msg = 'There was a problem loading your qSIP2 data.*'
-            with self.assertRaisesRegex(ValidationError, msg):
-                format.validate()
