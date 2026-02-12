@@ -6,19 +6,98 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import altair as alt
+import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects.methods import RS4
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 
-from typing import Optional
+import importlib
+import pathlib
 from pathlib import Path
+import shutil
+
+import rachis
 
 from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
+from q2_qsip2.metadata import _extract_source_metadata
 
 qsip2 = importr('qSIP2')
 
 
+def plot_weighted_average_densities(
+    output_dir: str,
+    wads: pd.DataFrame,
+    metadata: rachis.Metadata,
+    group: str | None = None
+):
+    '''
+    Plot per-source weighted average density values in a strip chart,
+    optionally faceted by a `group` variable.
+
+    Parameters
+    ----------
+    output_dir : str
+        The visualization directory.
+    wads : pd.DataFrame
+        The per-source WADs.
+    metadata : rachis.Metadata
+        The standardized metadata.
+    group : str | None
+        An optional source-level variable used to facet the figure.
+
+    Raises
+    ------
+    ValueError
+        If a `group` is given but not found in the source-level metadata.
+    '''
+    source_metadata_df = _extract_source_metadata(metadata).to_dataframe()
+    wads = pd.merge(
+        wads,
+        source_metadata_df,
+        left_on='source_mat_id',
+        right_index=True,
+        how='inner'
+    )
+
+    if group is not None and group not in wads.columns:
+        msg = (
+            f'Could not find the {group} variable in the source-level metadata.'
+        )
+        raise ValueError(msg)
+
+    chart = alt.Chart(
+        wads, width=100, height=400
+    ).mark_circle(size=100).encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(ticks=False, labels=False, grid=False),
+            scale=alt.Scale(padding=10)
+        ),
+        y=alt.Y(
+            'WAD:Q',
+            scale=alt.Scale(
+                domain=[wads['WAD'].min(), wads['WAD'].max()],
+                padding=10
+            ),
+        ),
+        color=alt.Color('isotope:N'),
+        tooltip='source_mat_id:N'
+    ).transform_calculate(
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    )
+
+    if group:
+        chart = chart.encode(
+            column=f'{group}:N'
+        )
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
+
+
+"""
 def plot_weighted_average_densities(
     output_dir: str, qsip_data: RS4, group: Optional[str] = None
 ) -> None:
@@ -44,6 +123,7 @@ def plot_weighted_average_densities(
     _ggplot2_object_to_visualization(
         plot, Path(output_dir), width=10, height=4
     )
+"""
 
 
 def plot_sample_curves(output_dir: str, qsip_data: RS4) -> None:

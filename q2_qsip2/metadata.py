@@ -63,7 +63,7 @@ def _construct_column_mapping(arguments: dict) -> dict:
 
 def _extract_source_metadata(
     sample_md: qiime2.Metadata,
-    source_column: str,
+    source_column: str = 'source_mat_id',
 ) -> qiime2.Metadata:
     '''
     Extract source-level metadata from sample-level metadata. The input

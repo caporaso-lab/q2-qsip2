@@ -115,6 +115,31 @@ plugin.methods.register_function(
     citations=[]
 )
 
+plugin.visualizers.register_function(
+    function=plot_weighted_average_densities,
+    inputs={
+        'wads': SampleData[SourceWADs],
+    },
+    parameters={
+        'metadata': Metadata,
+        'group': Str,
+    },
+    input_descriptions={
+        'wads': 'The per-source weighted average density values.'
+    },
+    parameter_descriptions={
+        'metadata': 'The standardized metdata',
+        'group': 'A source-level metadata column used to facet the plot.',
+    },
+    name='Plot weighted average densities.',
+    description=(
+        'Plots the per-source weighted average density values, colored by '
+        'isotope and optionally faceted by the source-level metadata column '
+        'specified by `group`.'
+    ),
+    citations=[],
+)
+
 '''
 plugin.methods.register_function(
     function=subset_and_filter,
@@ -197,28 +222,6 @@ plugin.methods.register_function(
     citations=[]
 )
 
-plugin.visualizers.register_function(
-    function=plot_weighted_average_densities,
-    inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
-    },
-    parameters={
-        'group': Str
-    },
-    input_descriptions={
-        'qsip_data': 'The qSIP data for which to plot the weighted average '
-                     'densities.'
-    },
-    parameter_descriptions={
-        'group': 'A source-level metadata column used to facet the plot.'
-    },
-    name='Plot weighted average densities.',
-    description=(
-        'Plots the per-source weighted average density, colored by isotope '
-        'and optionally faceted by the source-level metadata column `group`.'
-    ),
-    citations=[],
-)
 
 plugin.visualizers.register_function(
     function=plot_sample_curves,
