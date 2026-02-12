@@ -201,31 +201,6 @@ def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-def show_comparison_groups(
-    output_dir: str, qsip_data: RS4, groups: list
-) -> None:
-    '''
-    Displays a table of ids grouped in columns by isotope, and in rows by the
-    given groups.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    groups : list[str]
-        The names of one or more source-level metadata columns used to further
-        subdivide the labeled and unlabeled samples.
-    '''
-    groups_vector = ro.vectors.StrVector(groups)
-
-    with (ro.default_converter + pandas2ri.converter).context():
-        df = qsip2.show_comparison_groups(qsip_data, groups_vector)
-
-    df.to_html(Path(output_dir) / 'index.html')
-
-
 def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
     '''
     Displays per-source stacked bar charts showing the retention of features.

@@ -264,32 +264,6 @@ plugin.methods.register_function(
     citations=[]
 )
 
-
-
-
-plugin.visualizers.register_function(
-    function=show_comparison_groups,
-    inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
-    },
-    parameters={
-        'groups': List[Str]
-    },
-    input_descriptions={
-        'qsip_data': 'The qsip data artifact.'
-    },
-    parameter_descriptions={
-        'groups': 'The names of one or more source-level metadata columns used '
-                  'to further subdivide the labeled and unlabeled samples.'
-    },
-    name='Show available comparison groupings.',
-    description=(
-        'Displays a table of source-level ids grouped in columns by isotope '
-        'and in rows by the given groups.'
-    ),
-    citations=[],
-)
-
 plugin.visualizers.register_function(
     function=plot_filtered_features,
     inputs={
