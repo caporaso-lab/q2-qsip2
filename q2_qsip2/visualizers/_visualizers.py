@@ -149,28 +149,54 @@ def plot_sample_curves(
     ])
     chart = line + point
 
-    chart = chart.facet(facet='source_mat_id:N', columns=5)
+    chart = chart.facet(
+        facet='source_mat_id:N', columns=5
+    ).resolve_scale(
+        x='independent',
+        y='independent'
+    )
 
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-def plot_density_outliers(output_dir: str, qsip_data: RS4) -> None:
+def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     '''
-    Plots gradient position by density, faceted by source, and performs
-    Cook's outlier detection.
+    Plots gradient position (fraction) by gradient position density to show
+    any trend outliers.
 
     Parameters
     ----------
     output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
+        The visualization directory.
+    metadata : rachis.Metadata
+        The standardized metadata.
     '''
-    plot = qsip2.plot_density_outliers(qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
+    base = alt.Chart(metadata.to_dataframe()).encode(
+        x=alt.X('gradient_position:Q'),
+        y=alt.Y(
+            'gradient_pos_density:Q',
+            scale=alt.Scale(zero=False)
+        ),
     )
+
+    point = base.mark_circle(size=50).encode(
+        tooltip=['sample_id:N', 'gradient_position:Q', 'gradient_pos_density:N']
+    )
+
+    regression = base.transform_regression(
+        'gradient_position', 'gradient_pos_density',
+        groupby=['source_mat_id']
+    ).mark_line(color='orange')
+
+    chart = alt.layer(regression, point).facet(
+        facet='source_mat_id:N',
+        columns=5,
+    ).resolve_scale(
+        x='independent',
+        y='independent'
+    )
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
 def show_comparison_groups(

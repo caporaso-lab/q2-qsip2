@@ -164,6 +164,24 @@ plugin.visualizers.register_function(
     citations=[],
 )
 
+plugin.visualizers.register_function(
+    function=plot_density_outliers,
+    inputs={},
+    parameters={
+        'metadata': Metadata
+    },
+    input_descriptions={},
+    parameter_descriptions={
+        'metadata': 'The standardized qSIP2 metadata.'
+    },
+    name='Plot per-source density outliers.',
+    description=(
+        'Plots gradient position by density, faceted by source, to aid in the '
+        'detection of density outliers.'
+    ),
+    citations=[],
+)
+
 '''
 plugin.methods.register_function(
     function=subset_and_filter,
@@ -248,23 +266,6 @@ plugin.methods.register_function(
 
 
 
-plugin.visualizers.register_function(
-    function=plot_density_outliers,
-    inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
-    },
-    parameters={},
-    input_descriptions={
-        'qsip_data': 'The qsip data artifact.'
-    },
-    parameter_descriptions={},
-    name='Plot per-source density outliers.',
-    description=(
-        'Plots gradient position by density, faceted by source, and performs '
-        'Cook\'s outlier detection.'
-    ),
-    citations=[],
-)
 
 plugin.visualizers.register_function(
     function=show_comparison_groups,
