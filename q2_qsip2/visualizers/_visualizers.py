@@ -171,7 +171,9 @@ def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     metadata : rachis.Metadata
         The standardized metadata.
     '''
-    base = alt.Chart(metadata.to_dataframe()).encode(
+    metadata_df = metadata.to_dataframe().reset_index(names='sample_id')
+
+    base = alt.Chart(metadata_df).encode(
         x=alt.X('gradient_position:Q'),
         y=alt.Y(
             'gradient_pos_density:Q',
