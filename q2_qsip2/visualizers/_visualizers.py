@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import altair as alt
+import biom
 import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects.methods import RS4
@@ -20,6 +21,7 @@ import shutil
 
 import rachis
 
+from q2_qsip2.workflow import _create_qsip_data
 from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
 from q2_qsip2.metadata import _extract_source_metadata
 
@@ -97,51 +99,59 @@ def plot_weighted_average_densities(
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-"""
-def plot_weighted_average_densities(
-    output_dir: str, qsip_data: RS4, group: Optional[str] = None
+def plot_sample_curves(
+    output_dir: str,
+    table: biom.Table,
+    metadata: rachis.Metadata,
 ) -> None:
     '''
-    Plots the per-source weighted average density, colored by isotope and
-    optionally faceted by a source-level metadata column in `group`.
+    Plots distributions of normalized relative abundances within each source.
 
     Parameters
     ----------
     output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    group : str | None
-        An optional source-level metadata column used to facet the plot of
-        weighted average densities.
+        The visualization directory.
+    table : biom.Table
+        The feature table.
+    metadata : rachis.Metadata
+        The standardized metadata.
     '''
-    if group:
-        plot = qsip2.plot_source_wads(qsip_data, group=group)
-    else:
-        plot = qsip2.plot_source_wads(qsip_data)
+    R_qsip_obj = _create_qsip_data(table, metadata)
+    with (ro.default_converter + pandas2ri.converter).context():
+        norm_rel_abun_df = R_qsip_obj.slots['tube_rel_abundance']
 
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=4
+    # sum qPCR-normalized abundances within each sample
+    per_sample_rel_abun_df = norm_rel_abun_df.groupby(
+        'sample_id', as_index=False
+    ).agg({
+        'tube_rel_abundance': 'sum',
+    })
+
+    per_sample_rel_abun_df = pd.merge(
+        per_sample_rel_abun_df,
+        metadata.to_dataframe(),
+        left_on='sample_id',
+        right_index=True,
+        how='inner'
     )
-"""
 
-
-def plot_sample_curves(output_dir: str, qsip_data: RS4) -> None:
-    '''
-    Plots gradient position by relative amount of DNA, faceted by source.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    '''
-    plot = qsip2.plot_sample_curves(qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
+    base = alt.Chart(per_sample_rel_abun_df).encode(
+        x=alt.X('gradient_pos_density:Q'),
+        y=alt.Y('tube_rel_abundance:Q'),
+        color='source_mat_id:N',
     )
+
+    line = base.mark_line(interpolate='cardinal').encode(
+        strokeDash='isotope:N'
+    )
+    point = base.mark_circle(size=50).encode(tooltip=[
+        'sample_id:N', 'gradient_pos_density:Q', 'tube_rel_abundance:Q'
+    ])
+    chart = line + point
+
+    chart = chart.facet(facet='source_mat_id:N', columns=5)
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
 def plot_density_outliers(output_dir: str, qsip_data: RS4) -> None:

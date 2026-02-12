@@ -8,7 +8,9 @@
 
 import importlib
 
-from qiime2.plugin import Citations, Float, Int, List, Metadata, Plugin, Str
+from qiime2.plugin import (
+    Citations, Float, Int, List, Metadata, Plugin, Str, Choices
+)
 from q2_types.feature_table import FeatureTable, Frequency
 from q2_types.metadata import ImmutableMetadata
 from q2_types.sample_data import SampleData
@@ -140,6 +142,28 @@ plugin.visualizers.register_function(
     citations=[],
 )
 
+plugin.visualizers.register_function(
+    function=plot_sample_curves,
+    inputs={
+        'table': FeatureTable[Frequency],
+    },
+    parameters={
+        'metadata': Metadata,
+    },
+    input_descriptions={
+        'table': 'The feature table.',
+    },
+    parameter_descriptions={
+        'metadata': 'The standardized metadata.',
+    },
+    name='Plot per-source density curves.',
+    description=(
+        'Plot gradient position by normalized relative feature abundance, '
+        'faceted by source.'
+    ),
+    citations=[],
+)
+
 '''
 plugin.methods.register_function(
     function=subset_and_filter,
@@ -223,22 +247,6 @@ plugin.methods.register_function(
 )
 
 
-plugin.visualizers.register_function(
-    function=plot_sample_curves,
-    inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
-    },
-    parameters={},
-    input_descriptions={
-        'qsip_data': 'The qsip data artifact.'
-    },
-    parameter_descriptions={},
-    name='Plot per-source density curves.',
-    description=(
-        'Plots gradient position by relative amount of DNA, faceted by source.'
-    ),
-    citations=[],
-)
 
 plugin.visualizers.register_function(
     function=plot_density_outliers,
