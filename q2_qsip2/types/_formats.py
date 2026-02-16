@@ -31,3 +31,19 @@ QSIP2SourceWADsDirectoryFormat = model.SingleFileDirectoryFormat(
     'source-wads.tsv',
     QSIP2SourceWADsFormat
 )
+
+
+class QSIP2FeatureWADsFormat(model.TextFileFormat):
+    def _validate_(self, level):
+        with self.open() as fh:
+            df = pd.read_csv(fh, sep='\t')
+
+        if not 'feature_id' in df.columns:
+            raise ValidationError('Expected column "feature_id" not found.')
+
+
+QSIP2FeatureWADsDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2FeatureWADsDirectoryFormat',
+    'feature-wads.tsv',
+    QSIP2FeatureWADsFormat
+)

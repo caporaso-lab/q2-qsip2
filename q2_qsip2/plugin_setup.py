@@ -11,20 +11,21 @@ import importlib
 from qiime2.plugin import (
     Citations, Float, Int, List, Metadata, Plugin, Str, Choices
 )
-from q2_types.feature_table import FeatureTable, Frequency
+from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
 from q2_types.sample_data import SampleData
+from q2_types.feature_data import FeatureData
 
 from q2_qsip2 import __version__
-from q2_qsip2.types import SourceWADs
+from q2_qsip2.types import SourceWADs, WADs
 from q2_qsip2.workflow import (
-    calculate_weighted_average_densities, subset_and_filter,
+    calculate_weighted_average_densities, filter_by_prevalence,
     resample_and_calculate_EAF,
 )
 from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
-    show_comparison_groups, plot_filtered_features, plot_excess_atom_fractions
+    plot_filtered_features, plot_excess_atom_fractions
 )
 
 
@@ -182,29 +183,37 @@ plugin.visualizers.register_function(
     citations=[],
 )
 
-'''
 plugin.methods.register_function(
-    function=subset_and_filter,
+    function=filter_by_prevalence,
     inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
+        'table': FeatureTable[Frequency]
     },
     parameters={
-        'unlabeled_sources': List[Str],
-        'labeled_sources': List[Str],
+        'metadata': Metadata,
+        'unlabeled_isotope': Str,
+        'labeled_isotope': Str,
         'min_unlabeled_sources': Int,
         'min_labeled_sources': Int,
         'min_unlabeled_fractions': Int,
         'min_labeled_fractions': Int
     },
     outputs=[
-        ('filtered_qsip_data', QSIP2Data[Filtered])
+        ('filtered_table', FeatureTable[RelativeFrequency]),
+        ('feature_wads', FeatureData[WADs])
     ],
     input_descriptions={
-        'qsip_data': 'Your unfiltered qSIP2 data.'
+        'table': 'The feature table.'
     },
     parameter_descriptions={
-        'unlabeled_sources': 'The IDs of the unlabeled sources to retain.',
-        'labeled_sources': 'The IDs of the labeled sources to retain.',
+        'metadata': 'The standardized qSIP2 metadata.',
+        'unlabeled_isotope': (
+            'The value of the isotope variable that represents the unlabeled '
+            'isotope.'
+        ),
+        'labeled_isotope': (
+            'The value of the isotope variable that represents the labeled '
+            'isotope.'
+        ),
         'min_unlabeled_sources': (
             'The minimum number of unlabeled sources a feature must be '
             'present in to be retained.'
@@ -223,15 +232,20 @@ plugin.methods.register_function(
         )
     },
     output_descriptions={
-        'filtered_qsip_data': 'Your subsetted and filtered qSIP2 data.'
+        'filtered_table': 'The filtered relative abundance feature table.',
+        'feature_wads': (
+            'The filtered per-feature weighted average densities.'
+        )
     },
-    name='Subset sources and filter features to prepare for comparison.',
+    name='Filter features by source and fraction prevalence.',
     description=(
-        'Placeholder.'
+        'Filter features by source and fraction prevalence to prepare for '
+        'analysis.'
     ),
     citations=[]
 )
 
+'''
 plugin.methods.register_function(
     function=resample_and_calculate_EAF,
     inputs={

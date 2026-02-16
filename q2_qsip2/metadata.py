@@ -10,7 +10,7 @@ import warnings
 
 import pandas as pd
 
-import qiime2
+import rachis
 from rachis.core.exceptions import RachisWarning
 
 
@@ -62,9 +62,9 @@ def _construct_column_mapping(arguments: dict) -> dict:
 
 
 def _extract_source_metadata(
-    sample_md: qiime2.Metadata,
+    sample_md: rachis.Metadata,
     source_column: str = 'source_mat_id',
-) -> qiime2.Metadata:
+) -> rachis.Metadata:
     '''
     Extract source-level metadata from sample-level metadata. The input
     source-level metadata must have a column that indicates which source each
@@ -79,7 +79,7 @@ def _extract_source_metadata(
 
     Parameters
     ----------
-    sample_md : qiime2.Metadata
+    sample_md : rachis.Metadata
         The sample-level metadata (row per sequenced fraction).
     source_column : str
         The column name of the source identifier for each sample. The unique
@@ -87,7 +87,7 @@ def _extract_source_metadata(
 
     Returns
     -------
-    qiime2.Metadata
+    rachis.Metadata
         The extracted source-level metadata.
     '''
     sample_df = sample_md.to_dataframe().reset_index()
@@ -107,17 +107,17 @@ def _extract_source_metadata(
     ]
     source_df = grouped_df.head(1)[source_level_cols]
 
-    # must rename to 'id' so that `qiime2.Metadata` is happy
+    # must rename to 'id' so that `rachis.Metadata` is happy
     source_df.rename({source_column: 'id'}, axis=1, inplace=True)
     source_df.set_index('id', inplace=True)
 
-    return qiime2.Metadata(source_df)
+    return rachis.Metadata(source_df)
 
 
 def _merge_metadatas(
-    source_metadata: qiime2.Metadata,
-    sample_metadata: qiime2.Metadata,
-) -> qiime2.Metadata:
+    source_metadata: rachis.Metadata,
+    sample_metadata: rachis.Metadata,
+) -> rachis.Metadata:
     '''
     Merges source- and sample-level metadata into a single sample-level
     metadata object. The merged metadata object will have all source-level
@@ -130,14 +130,14 @@ def _merge_metadatas(
 
     Parameters
     ----------
-    source_metadata : qiime2.Metadata
+    source_metadata : rachis.Metadata
         The source-level metadata.
-    sample_metadata : qiime2.Metadata
+    sample_metadata : rachis.Metadata
         The sample-level metadata.
 
     Returns
     -------
-    qiime2.Metadata
+    rachis.Metadata
         The merged sample-level metadata.
     '''
     sample_md_df = sample_metadata.to_dataframe().reset_index(
@@ -167,7 +167,7 @@ def _merge_metadatas(
     merged_df.set_index('original_sample_identifier', inplace=True)
     merged_df.index.name = 'id'
 
-    return qiime2.Metadata(merged_df)
+    return rachis.Metadata(merged_df)
 
 
 def _validate_source_id_overlap(
@@ -224,20 +224,20 @@ def _validate_source_id_overlap(
 
 
 def _validate_and_rename_columns(
-    source_metadata: qiime2.Metadata,
-    sample_metadata: qiime2.Metadata,
+    source_metadata: rachis.Metadata,
+    sample_metadata: rachis.Metadata,
     source_column: str,
     column_mapping: dict,
-) -> tuple[qiime2.Metadata, qiime2.Metadata]:
+) -> tuple[rachis.Metadata, rachis.Metadata]:
     '''
     Validates the input metadata and extracts source-level metadata from
     sample-level metadata if necessary.
 
     Parameters
     ----------
-    source_metadata : qiime2.Metadata or None
+    source_metadata : rachis.Metadata or None
         The source-level metadata, if provided.
-    sample_metadata : qiime2.Metadata
+    sample_metadata : rachis.Metadata
         The sample-level metadata.
     source_column : str
         The column name, in the sample metadata, of the source identifier for
@@ -249,7 +249,7 @@ def _validate_and_rename_columns(
 
     Returns
     -------
-    tuple[qiime2.Metadata]
+    tuple[rachis.Metadata]
         The source and sample metadata tables.
     '''
     # extract source-level metadata if only sample-level metadata was provided
@@ -286,18 +286,18 @@ def _validate_and_rename_columns(
 
 
 def _validate_metadata_columns(
-    metadata: qiime2.Metadata,
+    metadata: rachis.Metadata,
     column_mapping: dict,
     metadata_type: str,
     extracted: bool = False
-) -> qiime2.Metadata:
+) -> rachis.Metadata:
     '''
     Asserts that all columns specified in `columns_mapping` are in
     `metadata`. Then renames all non-default columns to their defaults.
 
     Parameters
     ----------
-    metadata : qiime2.Metadata
+    metadata : rachis.Metadata
         The metadata to validate.
     column_mapping : dict[str, str]
         A mapping from default column name to provided name, for each pairing
@@ -311,7 +311,7 @@ def _validate_metadata_columns(
 
     Returns
     -------
-    qiime2.Metadata
+    rachis.Metadata
         The input `metadata` with the non-default columns renamed to defaults.
 
     Raises
@@ -379,25 +379,25 @@ def _validate_metadata_columns(
 
     md_df.set_index(index_name, inplace=True)
 
-    return qiime2.Metadata(md_df)
+    return rachis.Metadata(md_df)
 
 
 def standardize_metadata(
-    sample_metadata: qiime2.Metadata,
-    source_metadata: qiime2.Metadata | None = None,
+    sample_metadata: rachis.Metadata,
+    source_metadata: rachis.Metadata | None = None,
     source_mat_id_column: str = 'source_mat_id',
     isotope_column: str = 'isotope',
     isotopolog_column: str = 'isotopolog',
     gradient_position_column: str = 'gradient_position',
     gradient_pos_density_column: str = 'gradient_pos_density',
     gradient_pos_amt_column: str = 'gradient_pos_amt',
-) -> qiime2.Metadata:
+) -> rachis.Metadata:
     '''
     Parameters
     ----------
-    sample_metadata : qiime2.Metadata
+    sample_metadata : rachis.Metadata
         The sample-level metadata file.
-    source_metadata : qiime2.Metadata | None
+    source_metadata : rachis.Metadata | None
         The optional source-level metadata file.
     source_mat_id_column : str
         The name of the source material id column in the sample-level metadata.

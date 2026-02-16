@@ -13,7 +13,7 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects.methods import RS4
 from rpy2.robjects import pandas2ri
 
-import qiime2
+import rachis
 
 from q2_qsip2.metadata import standardize_metadata, _extract_source_metadata
 
@@ -23,13 +23,13 @@ importr('S7')
 
 def standard_workflow(
     table: biom.Table,
-    qsip_metadata: qiime2.Metadata,
+    qsip_metadata: rachis.Metadata,
 ) -> biom.Table:
 
     return table
 
 
-def _create_qsip_data(table: biom.Table, metadata: qiime2.Metadata) -> RS4:
+def _create_qsip_data(table: biom.Table, metadata: rachis.Metadata) -> RS4:
     '''
     Create a `qsip_data` R object from a feature table and standardized
     metadata.
@@ -39,7 +39,7 @@ def _create_qsip_data(table: biom.Table, metadata: qiime2.Metadata) -> RS4:
     table : biom.Table
         The feature table containing sample ids on one axis and feature ids
         on the other.
-    metadata : qiime2.Metadata
+    metadata : rachis.Metadata
         The standardized sample-level metadata containing all required
         sample-level and source-level variables.
 
@@ -53,9 +53,7 @@ def _create_qsip_data(table: biom.Table, metadata: qiime2.Metadata) -> RS4:
     sample_metadata = standardize_metadata(sample_metadata=metadata)
 
     # split standardized metadata into sample- & source-level
-    source_metadata = _extract_source_metadata(
-        metadata, source_column='source_mat_id'
-    )
+    source_metadata = _extract_source_metadata(metadata)
 
     # convert to dataframes
     sample_df = sample_metadata.to_dataframe()
@@ -91,7 +89,7 @@ def _create_qsip_data(table: biom.Table, metadata: qiime2.Metadata) -> RS4:
 
 
 def calculate_weighted_average_densities(
-    table: biom.Table, metadata: qiime2.Metadata
+    table: biom.Table, metadata: rachis.Metadata
 ) -> pd.DataFrame:
     '''
     Calculate per-source weighted average densities (WADs).
@@ -100,7 +98,7 @@ def calculate_weighted_average_densities(
     ----------
     table : biom.Table
         The feature table.
-    metadata : qiime2.Metadata
+    metadata : rachis.Metadata
         The standardized metadata.
 
     Returns
@@ -111,33 +109,33 @@ def calculate_weighted_average_densities(
     R_qsip_obj = _create_qsip_data(table, metadata)
 
     with (ro.default_converter + pandas2ri.converter).context():
-        source_wads_df = qsip2.source_wads(R_qsip_obj)
-
-    return source_wads_df
+        return qsip2.source_wads(R_qsip_obj)
 
 
-def subset_and_filter(
-    qsip_data: RS4,
-    unlabeled_sources: list[str],
-    labeled_sources: list[str],
+def filter_by_prevalence(
+    table: biom.Table,
+    metadata: rachis.Metadata,
+    unlabeled_isotope: str = '16O',
+    labeled_isotope: str = '18O',
     min_unlabeled_sources: int = 1,
     min_labeled_sources: int = 1,
     min_unlabeled_fractions: int = 1,
     min_labeled_fractions: int = 1
-) -> RS4:
+) -> (pd.DataFrame, pd.DataFrame):
     '''
-    Subsets the qsip data object to include only those sources listed in
-    `unlabeled_sources` and `labeled_sources`, and to include only those
-    features that pass the minimum prevalence parameters.
+    Filters `table` to include only those features that pass the minimum
+    prevalence parameters.
 
     Parameters
     ----------
-    qsip_data : RS4
-        The "qsip_data" object.
-    unlabeled_sources : list[str]
-        The IDs of the unlabeled sources to retain.
-    labeled_sources : list[str]
-        The IDs of the labeled sources to retain.
+    table : biom.Table
+        The feature table.
+    metadata : rachis.Metadata
+        The standardized qSIP2 metadata.
+    unlabeled_isotope : str
+        The metadata value corresponding to the unlabeled isotope.
+    labeled_isotope : str
+        The metadata value corresponding to the labeled isotope.
     min_unlabeled_sources : int
         The minimum number of unlabeled sources a feature must be present in
         to be retained.
@@ -150,12 +148,29 @@ def subset_and_filter(
     min_labeled_fractions : int
         The minimum number of fractions a feature must be present in
         to be considered present in a labeled source.
-    '''
-    unlabeled_sources_vector = ro.vectors.StrVector(unlabeled_sources)
-    labeled_sources_vector = ro.vectors.StrVector(labeled_sources)
 
-    filtered_qsip_data = qsip2.run_feature_filter(
-        qsip_data,
+    Returns
+    -------
+    tuple[pd.DataFrame]
+        The filtered feature table and the filtered source weighted average
+        densities.
+    '''
+    R_qsip_obj = _create_qsip_data(table, metadata)
+
+    source_metadata = _extract_source_metadata(metadata).to_dataframe()
+
+    unlabeled_sources = source_metadata.loc[
+        source_metadata['isotope'] == unlabeled_isotope
+    ].index
+    labeled_sources = source_metadata.loc[
+        source_metadata['isotope'] == labeled_isotope
+    ].index
+
+    unlabeled_sources_vector = ro.vectors.StrVector(list(unlabeled_sources))
+    labeled_sources_vector = ro.vectors.StrVector(list(labeled_sources))
+
+    R_filtered_qsip_obj = qsip2.run_feature_filter(
+        R_qsip_obj,
         unlabeled_source_mat_ids=unlabeled_sources_vector,
         labeled_source_mat_ids=labeled_sources_vector,
         min_unlabeled_sources=min_unlabeled_sources,
@@ -164,7 +179,16 @@ def subset_and_filter(
         min_labeled_fractions=min_labeled_fractions
     )
 
-    return filtered_qsip_data
+    with (ro.default_converter + pandas2ri.converter).context():
+        filtered_table_df = R_filtered_qsip_obj.slots['filtered_feature_data']
+        filtered_source_wads_df = R_filtered_qsip_obj.slots[
+            'filtered_wad_data'
+        ]
+
+    filtered_table_df = filtered_table_df.set_index('feature_id').T
+    filtered_table_df.index.name = 'sample-id'
+
+    return filtered_table_df, filtered_source_wads_df
 
 
 def resample_and_calculate_EAF(
