@@ -1,12 +1,14 @@
 from q2_qsip2.types._formats import (
     QSIP2SourceWADsFormat, QSIP2SourceWADsDirectoryFormat,
-    QSIP2FeatureWADsFormat, QSIP2FeatureWADsDirectoryFormat,
+    QSIP2FeatureWADFormat, QSIP2FeatureWADDirectoryFormat,
+    QSIP2FeatureEAFFormat, QSIP2FeatureEAFDirectoryFormat,
 )
-from q2_qsip2.types._types import SourceWADs, WADs
+from q2_qsip2.types._types import SourceWADs, WAD, EAF
 
 
 __all__ = [
-    'SourceWADs', 'WADs', 'QSIP2SourceWADsFormat',
-    'QSIP2SourceWADsDirectoryFormat', 'QSIP2FeatureWADsFormat',
-    'QSIP2FeatureWADsDirectoryFormat',
+    'SourceWADs', 'WAD', 'QSIP2SourceWADsFormat',
+    'QSIP2SourceWADsDirectoryFormat', 'QSIP2FeatureWADFormat',
+    'QSIP2FeatureWADDirectoryFormat', 'QSIP2FeatureEAFFormat',
+    'QSIP2FeatureEAFDirectoryFormat',
 ]

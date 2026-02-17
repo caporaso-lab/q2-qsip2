@@ -8,7 +8,9 @@
 
 import warnings
 
+import biom
 import pandas as pd
+import rpy2.robjects as ro
 
 import rachis
 from rachis.core.exceptions import RachisWarning
@@ -431,3 +433,55 @@ def standardize_metadata(
     merged_metadata = _merge_metadatas(source_metadata, sample_metadata)
 
     return merged_metadata
+
+
+def _get_source_vectors(
+    table: biom.Table,
+    metadata: rachis.Metadata,
+    unlabeled_isotope: str,
+    labeled_isotope: str,
+) -> tuple[ro.vectors.StrVector]:
+    '''
+    Extracts a set of unlabeled source IDs and a set of labeled source IDs
+    from the metadata, and intersects them with the .
+
+    Parameters
+    ----------
+    table : biom.Table
+        The feature table.
+    metadata : rachis.Metadata
+        The standardized qSIP2 metadata.
+    unlabeled_isotope : str
+        The metadata value corresponding to the unlabeled isotope.
+    labeled_isotope : str
+        The metadata value corresponding to the labeled isotope.
+
+    Returns
+    -------
+    tuple[ro.vectors.StrVector]
+        Two R str vectors, the first containing the unlabeled source IDs and
+        the second containing the labeled source IDs.
+    '''
+    source_metadata = _extract_source_metadata(metadata).to_dataframe()
+
+    unlabeled_sources = source_metadata.loc[
+        source_metadata['isotope'] == unlabeled_isotope
+    ].index
+    labeled_sources = source_metadata.loc[
+        source_metadata['isotope'] == labeled_isotope
+    ].index
+
+    # filter to sources represented by samples in the table
+    sample_ids = table.ids(axis='sample')
+    metadata_df = metadata.to_dataframe()
+    represented_source_ids = metadata_df.loc[
+        metadata_df.index.isin(sample_ids)
+    ]['source_mat_id'].unique()
+
+    unlabeled_sources = set(unlabeled_sources) & set(represented_source_ids)
+    labeled_sources = set(labeled_sources) & set(represented_source_ids)
+
+    unlabeled_sources_vector = ro.vectors.StrVector(list(unlabeled_sources))
+    labeled_sources_vector = ro.vectors.StrVector(list(labeled_sources))
+
+    return (unlabeled_sources_vector, labeled_sources_vector)

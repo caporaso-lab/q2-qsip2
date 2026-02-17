@@ -13,4 +13,6 @@ from q2_types.feature_data import FeatureData
 
 SourceWADs = SemanticType('SourceWADs', variant_of=SampleData.field['type'])
 
-WADs = SemanticType('WADs', variant_of=FeatureData.field['type'])
+WAD = SemanticType('WADs', variant_of=FeatureData.field['type'])
+
+EAF = SemanticType('EAFs', variant_of=FeatureData.field['type'])

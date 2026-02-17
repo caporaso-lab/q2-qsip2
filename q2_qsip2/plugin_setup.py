@@ -9,7 +9,7 @@
 import importlib
 
 from qiime2.plugin import (
-    Citations, Float, Int, List, Metadata, Plugin, Str, Choices
+    Citations, Float, Int, List, Metadata, Plugin, Str, Choices, Bool
 )
 from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
@@ -17,10 +17,10 @@ from q2_types.sample_data import SampleData
 from q2_types.feature_data import FeatureData
 
 from q2_qsip2 import __version__
-from q2_qsip2.types import SourceWADs, WADs
+from q2_qsip2.types import SourceWADs, WAD, EAF
 from q2_qsip2.workflow import (
     calculate_weighted_average_densities, filter_by_prevalence,
-    resample_and_calculate_EAF,
+    calculate_excess_atom_fractions,
 )
 from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
@@ -199,7 +199,7 @@ plugin.methods.register_function(
     },
     outputs=[
         ('filtered_table', FeatureTable[RelativeFrequency]),
-        ('feature_wads', FeatureData[WADs])
+        ('feature_wads', FeatureData[WAD])
     ],
     input_descriptions={
         'table': 'The feature table.'
@@ -245,39 +245,57 @@ plugin.methods.register_function(
     citations=[]
 )
 
-'''
 plugin.methods.register_function(
-    function=resample_and_calculate_EAF,
+    function=calculate_excess_atom_fractions,
     inputs={
-        'filtered_qsip_data': QSIP2Data[Filtered]
+        'table': FeatureTable[RelativeFrequency],
+        'feature_wads': FeatureData[WAD],
     },
     parameters={
+        'metadata': Metadata,
+        'unlabeled_isotope': Str,
+        'labeled_isotope': Str,
         'resamples': Int,
         'random_seed': Int,
+        'allow_resampling_failures': Bool,
     },
     outputs=[
-        ('eaf_qsip_data', QSIP2Data[EAF])
+        ('excess_atom_fractions', FeatureData[EAF])
     ],
     input_descriptions={
-        'filtered_qsip_data': 'Your filtered qSIP2 data.'
+        'table': 'The prevalence-filtered feature table.',
+        'feature_wads': 'The per-feature weighted average densities.',
     },
     parameter_descriptions={
+        'metadata': 'The standardized qSIP2 metadata.',
+        'unlabeled_isotope': (
+            'The value of the isotope variable that represents the unlabeled '
+            'isotope.'
+        ),
+        'labeled_isotope': (
+            'The value of the isotope variable that represents the labeled '
+            'isotope.'
+        ),
         'resamples': 'The number of bootstrap resamplings to perform.',
         'random_seed': 'The random seed to use during resampling.',
-    },
-    output_descriptions={
-        'eaf_qsip_data': (
-            'Your qSIP2 data with excess atom fraction (EAF) values '
-            'calculated on a per-taxon basis.'
+        'allow_resampling_failures': (
+            'Whether to allow bootstrapped per-feature weighted average '
+            'density vectors that contain all-NA values. If True then such '
+            'samples are silentlly discarded, if False then an error is '
+            'raised.'
         )
     },
-    name='Calculate excess atom fraction (EAF).',
+    output_descriptions={
+        'excess_atom_fractions': ('The per-feature excess atom fractions.'),
+    },
+    name='Calculate excess atom fractions (EAFs).',
     description=(
         'Placeholder.'
     ),
     citations=[]
 )
 
+'''
 plugin.visualizers.register_function(
     function=plot_filtered_features,
     inputs={

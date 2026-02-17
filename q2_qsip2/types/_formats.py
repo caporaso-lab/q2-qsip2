@@ -33,7 +33,7 @@ QSIP2SourceWADsDirectoryFormat = model.SingleFileDirectoryFormat(
 )
 
 
-class QSIP2FeatureWADsFormat(model.TextFileFormat):
+class QSIP2FeatureWADFormat(model.TextFileFormat):
     def _validate_(self, level):
         with self.open() as fh:
             df = pd.read_csv(fh, sep='\t')
@@ -42,8 +42,25 @@ class QSIP2FeatureWADsFormat(model.TextFileFormat):
             raise ValidationError('Expected column "feature_id" not found.')
 
 
-QSIP2FeatureWADsDirectoryFormat = model.SingleFileDirectoryFormat(
-    'QSIP2FeatureWADsDirectoryFormat',
+QSIP2FeatureWADDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2FeatureWADDirectoryFormat',
     'feature-wads.tsv',
-    QSIP2FeatureWADsFormat
+    QSIP2FeatureWADFormat
+)
+
+
+class QSIP2FeatureEAFFormat(model.TextFileFormat):
+    def _validate_(self, level):
+        with self.open() as fh:
+            df = pd.read_csv(fh, sep='\t')
+
+        for column in ('feature_id', 'W_lab_mean', 'W_unlab_mean'):
+            if column not in df.columns:
+                raise ValidationError(f'Expected column "{column}" not found.')
+
+
+QSIP2FeatureEAFDirectoryFormat = model.SingleFileDirectoryFormat(
+    'QSIP2FeatureEAFDirectoryFormat',
+    'feature-eafs.tsv',
+    QSIP2FeatureEAFFormat
 )
