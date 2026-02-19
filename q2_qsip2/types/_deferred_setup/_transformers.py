@@ -56,4 +56,4 @@ def _5(df: pd.DataFrame) -> QSIP2FeatureEAFFormat:
 
 @plugin.register_transformer
 def _6(ff: QSIP2FeatureEAFFormat) -> pd.DataFrame:
-    _format_to_df(ff)
+    return _format_to_df(ff)

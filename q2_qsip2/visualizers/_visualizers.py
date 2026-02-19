@@ -21,16 +21,16 @@ import shutil
 
 import rachis
 
-from q2_qsip2.workflow import _create_qsip_data
 from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
 from q2_qsip2.metadata import _extract_source_metadata
+from q2_qsip2._constructors import _create_qsip_data
 
 qsip2 = importr('qSIP2')
 
 
 def plot_weighted_average_densities(
     output_dir: str,
-    wads: pd.DataFrame,
+    source_wads: pd.DataFrame,
     metadata: rachis.Metadata,
     group: str | None = None
 ):
@@ -42,7 +42,7 @@ def plot_weighted_average_densities(
     ----------
     output_dir : str
         The visualization directory.
-    wads : pd.DataFrame
+    source_wads : pd.DataFrame
         The per-source WADs.
     metadata : rachis.Metadata
         The standardized metadata.
@@ -201,7 +201,13 @@ def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
+def plot_filtered_features(
+    output_dir: str,
+    table: biom.Table,
+    metadata: rachis.Metadata,
+    unlabeled_isotope: str,
+    labeled_isotope: str,
+) -> None:
     '''
     Displays per-source stacked bar charts showing the retention of features.
 
@@ -221,7 +227,7 @@ def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
 
 def plot_excess_atom_fractions(
     output_dir: str,
-    eaf_qsip_data: RS4,
+    excess_atom_fractions: pd.DataFrame,
     num_top: int = 50,
     confidence_interval: float = 0.9
 ) -> None:
@@ -232,8 +238,8 @@ def plot_excess_atom_fractions(
     ----------
     output_dir : str
         The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
+    excess_atom_fractions : pd.DataFrame
+        The per-feature excess atom fraction bootstrap samples.
     num_top : int
         The number of taxa displayed taken in order of decreasing excess
         atom fraction.
@@ -241,10 +247,50 @@ def plot_excess_atom_fractions(
         The confidence interval to display from the bootstrapped excess atom
         fraction values.
     '''
-    plot = qsip2.plot_EAF_values(
-        eaf_qsip_data, top=num_top, confidence=confidence_interval, error='bar'
+    alpha = (1 - confidence_interval) / 2
+
+    resampled_df = excess_atom_fractions[
+        excess_atom_fractions['observed'] == False
+    ]
+    observed_df = excess_atom_fractions[
+        excess_atom_fractions['observed'] == True
+    ]
+
+    summarized_df = resampled_df.groupby(
+        'feature_id', as_index=False
+    ).agg(
+        mean_EAF=('EAF', 'mean'),
+        lower=('EAF', lambda s: s.quantile(alpha)),
+        upper=('EAF', lambda s: s.quantile(1 - alpha)),
     )
 
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
+    all_eaf_df = pd.merge(
+        observed_df, summarized_df, on='feature_id', how='left'
     )
+
+    all_eaf_df.sort_values(by='EAF', inplace=True, ascending=False)
+    all_eaf_df = all_eaf_df.iloc[0: min(num_top, len(all_eaf_df)), :]
+
+    points = alt.Chart(all_eaf_df).mark_circle(size=80).encode(
+        x=alt.X('EAF:Q'),
+        y=alt.Y(
+            'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
+        ),
+        tooltip=['feature_id:N', 'EAF:Q'],
+    )
+
+    x_axis_title = (
+        f'Excess Atom Fraction, {confidence_interval} confidence interval'
+    )
+    intervals = alt.Chart(all_eaf_df).mark_errorbar().encode(
+        x=alt.X('lower:Q', title=x_axis_title),
+        x2='upper:Q',
+        y=alt.Y(
+            'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
+        ),
+        tooltip=alt.value(None)
+    )
+
+    chart = intervals + points
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')

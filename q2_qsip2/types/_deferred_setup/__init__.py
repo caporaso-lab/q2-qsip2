@@ -12,14 +12,14 @@ from q2_types.sample_data import SampleData
 from q2_types.feature_data import FeatureData
 
 from q2_qsip2.plugin_setup import plugin
-from q2_qsip2.types._types import SourceWADs, WAD, EAF
+from q2_qsip2.types._types import SourceData, FeatureWAD, SourceWAD, EAF
 from q2_qsip2.types._formats import (
     QSIP2SourceWADsDirectoryFormat, QSIP2FeatureWADDirectoryFormat,
     QSIP2FeatureEAFDirectoryFormat,
 )
 
 
-plugin.register_semantic_types(SourceWADs, WAD, EAF)
+plugin.register_semantic_types(SourceData, SourceWAD, FeatureWAD, EAF)
 
 
 plugin.register_formats(
@@ -29,13 +29,13 @@ plugin.register_formats(
 
 
 plugin.register_artifact_class(
-    SampleData[SourceWADs],
+    SourceData[SourceWAD],
     directory_format=QSIP2SourceWADsDirectoryFormat,
     description=('Represents per-source weighted average density (WAD) values.')
 )
 
 plugin.register_artifact_class(
-    FeatureData[WAD],
+    FeatureData[FeatureWAD],
     directory_format=QSIP2FeatureWADDirectoryFormat,
     description=(
         'Represents per-feature weighted average density (WAD) values.'

@@ -7,12 +7,13 @@
 # ----------------------------------------------------------------------------
 
 from qiime2.plugin import SemanticType
-from q2_types.sample_data import SampleData
 from q2_types.feature_data import FeatureData
 
 
-SourceWADs = SemanticType('SourceWADs', variant_of=SampleData.field['type'])
+SourceData = SemanticType('SourceData', field_names='type')
 
-WAD = SemanticType('WADs', variant_of=FeatureData.field['type'])
+SourceWAD = SemanticType('SourceWAD', variant_of=SourceData.field['type'])
 
-EAF = SemanticType('EAFs', variant_of=FeatureData.field['type'])
+FeatureWAD = SemanticType('FeatureWAD', variant_of=FeatureData.field['type'])
+
+EAF = SemanticType('EAF', variant_of=FeatureData.field['type'])

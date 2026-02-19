@@ -17,7 +17,7 @@ from q2_types.sample_data import SampleData
 from q2_types.feature_data import FeatureData
 
 from q2_qsip2 import __version__
-from q2_qsip2.types import SourceWADs, WAD, EAF
+from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
 from q2_qsip2.workflow import (
     calculate_weighted_average_densities, filter_by_prevalence,
     calculate_excess_atom_fractions,
@@ -102,7 +102,7 @@ plugin.methods.register_function(
         'metadata': Metadata,
     },
     outputs=[
-        ('wads', SampleData[SourceWADs])
+        ('source_wads', SourceData[SourceWAD])
     ],
     input_descriptions={
         'table': 'Your feature table.'
@@ -111,7 +111,7 @@ plugin.methods.register_function(
         'metadata': 'Your standardized metadata.'
     },
     output_descriptions={
-        'wads': 'The per-source weighted average densities.'
+        'source_wads': 'The per-source weighted average densities.'
     },
     name='Calculate weighted average densities.',
     description='Calculate per-source weighted average densities.',
@@ -121,14 +121,14 @@ plugin.methods.register_function(
 plugin.visualizers.register_function(
     function=plot_weighted_average_densities,
     inputs={
-        'wads': SampleData[SourceWADs],
+        'source_wads': SourceData[SourceWAD],
     },
     parameters={
         'metadata': Metadata,
         'group': Str,
     },
     input_descriptions={
-        'wads': 'The per-source weighted average density values.'
+        'source_wads': 'The per-source weighted average density values.'
     },
     parameter_descriptions={
         'metadata': 'The standardized metdata',
@@ -199,7 +199,7 @@ plugin.methods.register_function(
     },
     outputs=[
         ('filtered_table', FeatureTable[RelativeFrequency]),
-        ('feature_wads', FeatureData[WAD])
+        ('feature_wads', FeatureData[FeatureWAD])
     ],
     input_descriptions={
         'table': 'The feature table.'
@@ -249,7 +249,7 @@ plugin.methods.register_function(
     function=calculate_excess_atom_fractions,
     inputs={
         'table': FeatureTable[RelativeFrequency],
-        'feature_wads': FeatureData[WAD],
+        'feature_wads': FeatureData[FeatureWAD],
     },
     parameters={
         'metadata': Metadata,
@@ -295,6 +295,37 @@ plugin.methods.register_function(
     citations=[]
 )
 
+
+plugin.visualizers.register_function(
+    function=plot_excess_atom_fractions,
+    inputs={
+        'excess_atom_fractions': FeatureData[EAF],
+    },
+    parameters={
+        'num_top': Int,
+        'confidence_interval': Float
+    },
+    input_descriptions={
+        'excess_atom_fractions': 'The per-feature excess atom fraction values.',
+    },
+    parameter_descriptions={
+        'num_top': (
+            'The number of taxa displayed, selected in order of decreasing '
+            'excess atom fraction.'
+        ),
+        'confidence_interval': (
+            'The confidence interval to display from the bootstrapped excess '
+            'atom fractions.'
+        )
+    },
+    name='Visualize per-feature excess atom fractions.',
+    description=(
+        'Plots per-taxon excess atom fractions with bootstrapped confidence '
+        'intervals.'
+    ),
+    citations=[]
+)
+
 '''
 plugin.visualizers.register_function(
     function=plot_filtered_features,
@@ -312,36 +343,6 @@ plugin.visualizers.register_function(
         'relative abundance and feature count.'
     ),
     citations=[],
-)
-
-plugin.visualizers.register_function(
-    function=plot_excess_atom_fractions,
-    inputs={
-        'eaf_qsip_data': QSIP2Data[EAF],
-    },
-    parameters={
-        'num_top': Int,
-        'confidence_interval': Float
-    },
-    input_descriptions={
-        'eaf_qsip_data': 'Your EAF-calculated qSIP2 data.',
-    },
-    parameter_descriptions={
-        'num_top': (
-            'The number of taxa displayed, selected in order of decreasing '
-            'excess atom fraction.'
-        ),
-        'confidence_interval': (
-            'The confidence interval to display from the bootstrapped excess '
-            'atom fractions.'
-        )
-    },
-    name='Visualize per-taxon excess atom fractions.',
-    description=(
-        'Plots per-taxon excess atom fractions with bootstrapped confidence '
-        'intervals.'
-    ),
-    citations=[]
 )
 '''
 
