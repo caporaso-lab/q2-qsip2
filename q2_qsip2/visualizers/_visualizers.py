@@ -201,30 +201,6 @@ def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-def plot_filtered_features(
-    output_dir: str,
-    table: biom.Table,
-    metadata: rachis.Metadata,
-    unlabeled_isotope: str,
-    labeled_isotope: str,
-) -> None:
-    '''
-    Displays per-source stacked bar charts showing the retention of features.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    '''
-    plot = qsip2.plot_filter_results(filtered_qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
-    )
-
-
 def plot_excess_atom_fractions(
     output_dir: str,
     excess_atom_fractions: pd.DataFrame,

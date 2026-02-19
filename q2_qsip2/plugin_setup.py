@@ -326,24 +326,5 @@ plugin.visualizers.register_function(
     citations=[]
 )
 
-'''
-plugin.visualizers.register_function(
-    function=plot_filtered_features,
-    inputs={
-        'filtered_qsip_data': QSIP2Data[Filtered]
-    },
-    parameters={},
-    input_descriptions={
-        'filtered_qsip_data': 'Your filtered qsip data artifact.'
-    },
-    parameter_descriptions={},
-    name='Visualize feature retention.',
-    description=(
-        'Displays per-source stacked bar charts of feature retention by '
-        'relative abundance and feature count.'
-    ),
-    citations=[],
-)
-'''
 
 importlib.import_module('q2_qsip2.types._deferred_setup')
