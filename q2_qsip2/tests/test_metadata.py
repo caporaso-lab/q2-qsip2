@@ -14,7 +14,7 @@ from rachis.core.exceptions import RachisWarning
 
 from q2_qsip2.metadata import (
     _extract_source_metadata, _validate_metadata_columns,
-    _validate_source_id_overlap, standardize_metadata
+    _validate_source_id_overlap,
 )
 
 
@@ -50,7 +50,7 @@ class TestExtractSourceMetadata(TestPluginBase):
         with self.assertRaisesRegex(
             ValueError, '"source-mat-id" was not found'
         ):
-            extracted = _extract_source_metadata(
+            _extract_source_metadata(
                 self.sample_metadata(), 'source-mat-id'
             ).to_dataframe().reset_index()
 

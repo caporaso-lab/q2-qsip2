@@ -8,19 +8,11 @@
 
 import biom
 import pandas as pd
-import rpy2.robjects as ro
-from rpy2.robjects.methods import RS4
 
 import importlib.resources
-from pathlib import Path
-import pickle
-import tempfile
 
 import qiime2
-from qiime2.plugin import ValidationError
 from qiime2.plugin.testing import TestPluginBase
-
-from q2_qsip2.types import QSIP2DataUnfilteredFormat
 
 
 class TestFormats(TestPluginBase):

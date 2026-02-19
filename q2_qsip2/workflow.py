@@ -10,14 +10,11 @@ import biom
 import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
-from rpy2.robjects.methods import RS4
 from rpy2.robjects import pandas2ri
 
 import rachis
 
-from q2_qsip2.metadata import (
-    standardize_metadata, _extract_source_metadata, _get_source_vectors
-)
+from q2_qsip2.metadata import _get_source_vectors
 from q2_qsip2._constructors import (
     _create_qsip_data, _create_filtered_qsip_data,
 )

@@ -8,7 +8,6 @@
 
 import importlib
 
-from q2_types.sample_data import SampleData
 from q2_types.feature_data import FeatureData
 
 from q2_qsip2.plugin_setup import plugin

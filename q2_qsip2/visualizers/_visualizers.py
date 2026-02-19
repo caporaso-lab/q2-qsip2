@@ -10,18 +10,13 @@ import altair as alt
 import biom
 import pandas as pd
 import rpy2.robjects as ro
-from rpy2.robjects.methods import RS4
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 
-import importlib
 import pathlib
-from pathlib import Path
-import shutil
 
 import rachis
 
-from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
 from q2_qsip2.metadata import _extract_source_metadata
 from q2_qsip2._constructors import _create_qsip_data
 
@@ -56,7 +51,7 @@ def plot_weighted_average_densities(
     '''
     source_metadata_df = _extract_source_metadata(metadata).to_dataframe()
     wads = pd.merge(
-        wads,
+        source_wads,
         source_metadata_df,
         left_on='source_mat_id',
         right_index=True,
@@ -70,7 +65,7 @@ def plot_weighted_average_densities(
         raise ValueError(msg)
 
     chart = alt.Chart(
-        wads, width=100, height=400
+        source_wads, width=100, height=400
     ).mark_circle(size=100).encode(
         x=alt.X(
             'jitter:Q',
@@ -225,12 +220,8 @@ def plot_excess_atom_fractions(
     '''
     alpha = (1 - confidence_interval) / 2
 
-    resampled_df = excess_atom_fractions[
-        excess_atom_fractions['observed'] == False
-    ]
-    observed_df = excess_atom_fractions[
-        excess_atom_fractions['observed'] == True
-    ]
+    resampled_df = excess_atom_fractions[~excess_atom_fractions['observed']]
+    observed_df = excess_atom_fractions[excess_atom_fractions['observed']]
 
     summarized_df = resampled_df.groupby(
         'feature_id', as_index=False

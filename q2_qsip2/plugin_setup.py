@@ -9,11 +9,10 @@
 import importlib
 
 from qiime2.plugin import (
-    Citations, Float, Int, List, Metadata, Plugin, Str, Choices, Bool
+    Citations, Float, Int, Metadata, Plugin, Str, Bool
 )
 from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
-from q2_types.sample_data import SampleData
 from q2_types.feature_data import FeatureData
 
 from q2_qsip2 import __version__
@@ -25,7 +24,7 @@ from q2_qsip2.workflow import (
 from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
     plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
-    plot_filtered_features, plot_excess_atom_fractions
+    plot_excess_atom_fractions,
 )
 
 

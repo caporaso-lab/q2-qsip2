@@ -6,9 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pickle
-
-import rpy2.robjects as ro
 import pandas as pd
 
 from qiime2.plugin import ValidationError
@@ -38,7 +35,7 @@ class QSIP2FeatureWADFormat(model.TextFileFormat):
         with self.open() as fh:
             df = pd.read_csv(fh, sep='\t')
 
-        if not 'feature_id' in df.columns:
+        if 'feature_id' not in df.columns:
             raise ValidationError('Expected column "feature_id" not found.')
 
 
