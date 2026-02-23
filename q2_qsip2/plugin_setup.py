@@ -18,13 +18,13 @@ from q2_types.feature_data import FeatureData
 from q2_qsip2 import __version__
 from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
 from q2_qsip2.workflow import (
-    calculate_weighted_average_densities, filter_by_prevalence,
-    calculate_excess_atom_fractions,
+    calculate_source_WADs, calculate_feature_WADs,
+    calculate_feature_EAFs,
 )
 from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
-    plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
-    plot_excess_atom_fractions,
+    plot_source_WADs, plot_density_distributions, plot_density_outliers,
+    plot_feature_EAFs,
 )
 
 
@@ -93,7 +93,7 @@ plugin.methods.register_function(
 )
 
 plugin.methods.register_function(
-    function=calculate_weighted_average_densities,
+    function=calculate_source_WADs,
     inputs={
         'table': FeatureTable[Frequency],
     },
@@ -107,83 +107,18 @@ plugin.methods.register_function(
         'table': 'Your feature table.'
     },
     parameter_descriptions={
-        'metadata': 'Your standardized metadata.'
+        'metadata': 'Your qSIP2 standardized metadata.'
     },
     output_descriptions={
         'source_wads': 'The per-source weighted average densities.'
     },
-    name='Calculate weighted average densities.',
+    name='Calculate per-source weighted average densities.',
     description='Calculate per-source weighted average densities.',
     citations=[]
 )
 
-plugin.visualizers.register_function(
-    function=plot_weighted_average_densities,
-    inputs={
-        'source_wads': SourceData[SourceWAD],
-    },
-    parameters={
-        'metadata': Metadata,
-        'group': Str,
-    },
-    input_descriptions={
-        'source_wads': 'The per-source weighted average density values.'
-    },
-    parameter_descriptions={
-        'metadata': 'The standardized metdata',
-        'group': 'A source-level metadata column used to facet the plot.',
-    },
-    name='Plot weighted average densities.',
-    description=(
-        'Plots the per-source weighted average density values, colored by '
-        'isotope and optionally faceted by the source-level metadata column '
-        'specified by `group`.'
-    ),
-    citations=[],
-)
-
-plugin.visualizers.register_function(
-    function=plot_sample_curves,
-    inputs={
-        'table': FeatureTable[Frequency],
-    },
-    parameters={
-        'metadata': Metadata,
-    },
-    input_descriptions={
-        'table': 'The feature table.',
-    },
-    parameter_descriptions={
-        'metadata': 'The standardized metadata.',
-    },
-    name='Plot per-source density curves.',
-    description=(
-        'Plot gradient position by normalized relative feature abundance, '
-        'faceted by source.'
-    ),
-    citations=[],
-)
-
-plugin.visualizers.register_function(
-    function=plot_density_outliers,
-    inputs={},
-    parameters={
-        'metadata': Metadata
-    },
-    input_descriptions={},
-    parameter_descriptions={
-        'metadata': 'The standardized qSIP2 metadata.'
-    },
-    name='Plot per-source density outliers.',
-    description=(
-        'Plots gradient position by density, faceted by source, to aid in the '
-        'detection of density outliers.'
-    ),
-    citations=[],
-)
-
 plugin.methods.register_function(
-    function=filter_by_prevalence,
+    function=calculate_feature_WADs,
     inputs={
         'table': FeatureTable[Frequency]
     },
@@ -233,19 +168,20 @@ plugin.methods.register_function(
     output_descriptions={
         'filtered_table': 'The filtered relative abundance feature table.',
         'feature_wads': (
-            'The filtered per-feature weighted average densities.'
+            'The per-feature weighted average densities for each feature in '
+            'in the filtered table.'
         )
     },
-    name='Filter features by source and fraction prevalence.',
+    name='Calculate per-feature weighted average densities.',
     description=(
-        'Filter features by source and fraction prevalence to prepare for '
-        'analysis.'
+        'Filter features by source and fraction prevalence and calculate '
+        'weighted average densities for the retained features.'
     ),
     citations=[]
 )
 
 plugin.methods.register_function(
-    function=calculate_excess_atom_fractions,
+    function=calculate_feature_EAFs,
     inputs={
         'table': FeatureTable[RelativeFrequency],
         'feature_wads': FeatureData[FeatureWAD],
@@ -259,7 +195,7 @@ plugin.methods.register_function(
         'allow_resampling_failures': Bool,
     },
     outputs=[
-        ('excess_atom_fractions', FeatureData[EAF])
+        ('feature_eafs', FeatureData[EAF])
     ],
     input_descriptions={
         'table': 'The prevalence-filtered feature table.',
@@ -285,27 +221,95 @@ plugin.methods.register_function(
         )
     },
     output_descriptions={
-        'excess_atom_fractions': ('The per-feature excess atom fractions.'),
+        'feature_eafs': 'The per-feature excess atom fractions.',
     },
-    name='Calculate excess atom fractions (EAFs).',
+    name='Calculate per-feature excess atom fractions.',
     description=(
-        'Placeholder.'
+        'Calculate per-feature excess atom fractions (EAFs) and '
+        'bootstrap samples of such EAF values. Note that all sources in each '
+        'of the isotope categories are used in the calculation. If a '
+        'a comparison of only some these sources is desired then the '
+        'metadata should be subsetted first.'
     ),
     citations=[]
 )
 
+plugin.visualizers.register_function(
+    function=plot_source_WADs,
+    inputs={
+        'source_wads': SourceData[SourceWAD],
+    },
+    parameters={
+        'metadata': Metadata,
+        'group': Str,
+    },
+    input_descriptions={
+        'source_wads': 'The per-source weighted average density values.'
+    },
+    parameter_descriptions={
+        'metadata': 'The standardized metdata',
+        'group': 'A source-level metadata column used to facet the plot.',
+    },
+    name='Plot weighted average densities.',
+    description=(
+        'Plots the per-source weighted average density values, colored by '
+        'isotope and optionally faceted by the source-level metadata column '
+        'specified by `group`.'
+    ),
+    citations=[],
+)
 
 plugin.visualizers.register_function(
-    function=plot_excess_atom_fractions,
+    function=plot_density_distributions,
     inputs={
-        'excess_atom_fractions': FeatureData[EAF],
+        'table': FeatureTable[Frequency],
+    },
+    parameters={
+        'metadata': Metadata,
+    },
+    input_descriptions={
+        'table': 'The feature table.',
+    },
+    parameter_descriptions={
+        'metadata': 'The standardized metadata.',
+    },
+    name='Plot per-source density curves.',
+    description=(
+        'Plot gradient density by normalized relative feature abundance for '
+        'each source.'
+    ),
+    citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=plot_density_outliers,
+    inputs={},
+    parameters={
+        'metadata': Metadata
+    },
+    input_descriptions={},
+    parameter_descriptions={
+        'metadata': 'The standardized qSIP2 metadata.'
+    },
+    name='Plot per-source density outliers.',
+    description=(
+        'Plots gradient position by density, faceted by source, to aid in the '
+        'detection of density outliers.'
+    ),
+    citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=plot_feature_EAFs,
+    inputs={
+        'feature_eafs': FeatureData[EAF],
     },
     parameters={
         'num_top': Int,
         'confidence_interval': Float
     },
     input_descriptions={
-        'excess_atom_fractions': 'The per-feature excess atom fraction values.',
+        'feature_eafs': 'The per-feature excess atom fraction values.',
     },
     parameter_descriptions={
         'num_top': (

@@ -24,7 +24,7 @@ base = importr('base')
 importr('S7')
 
 
-def calculate_weighted_average_densities(
+def calculate_source_WADs(
     table: biom.Table, metadata: rachis.Metadata
 ) -> pd.DataFrame:
     '''
@@ -48,7 +48,7 @@ def calculate_weighted_average_densities(
         return qsip2.source_wads(R_qsip_obj)
 
 
-def filter_by_prevalence(
+def calculate_feature_WADs(
     table: biom.Table,
     metadata: rachis.Metadata,
     unlabeled_isotope: str = '16O',
@@ -119,7 +119,7 @@ def filter_by_prevalence(
     return filtered_table_df, filtered_source_wads_df
 
 
-def calculate_excess_atom_fractions(
+def calculate_feature_EAFs(
     table: biom.Table,
     feature_wads: pd.DataFrame,
     metadata: rachis.Metadata,

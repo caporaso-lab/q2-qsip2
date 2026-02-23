@@ -23,7 +23,7 @@ from q2_qsip2._constructors import _create_qsip_data
 qsip2 = importr('qSIP2')
 
 
-def plot_weighted_average_densities(
+def plot_source_WADs(
     output_dir: str,
     source_wads: pd.DataFrame,
     metadata: rachis.Metadata,
@@ -50,7 +50,7 @@ def plot_weighted_average_densities(
         If a `group` is given but not found in the source-level metadata.
     '''
     source_metadata_df = _extract_source_metadata(metadata).to_dataframe()
-    wads = pd.merge(
+    source_wads = pd.merge(
         source_wads,
         source_metadata_df,
         left_on='source_mat_id',
@@ -58,14 +58,14 @@ def plot_weighted_average_densities(
         how='inner'
     )
 
-    if group is not None and group not in wads.columns:
+    if group is not None and group not in source_wads.columns:
         msg = (
             f'Could not find the {group} variable in the source-level metadata.'
         )
         raise ValueError(msg)
 
     chart = alt.Chart(
-        source_wads, width=100, height=400
+        source_wads, width=200, height=400
     ).mark_circle(size=100).encode(
         x=alt.X(
             'jitter:Q',
@@ -76,12 +76,12 @@ def plot_weighted_average_densities(
         y=alt.Y(
             'WAD:Q',
             scale=alt.Scale(
-                domain=[wads['WAD'].min(), wads['WAD'].max()],
+                domain=[source_wads['WAD'].min(), source_wads['WAD'].max()],
                 padding=10
             ),
         ),
         color=alt.Color('isotope:N'),
-        tooltip='source_mat_id:N'
+        tooltip=['source_mat_id:N', 'WAD:Q'],
     ).transform_calculate(
         jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
     )
@@ -94,7 +94,7 @@ def plot_weighted_average_densities(
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-def plot_sample_curves(
+def plot_density_distributions(
     output_dir: str,
     table: biom.Table,
     metadata: rachis.Metadata,
@@ -196,9 +196,9 @@ def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
-def plot_excess_atom_fractions(
+def plot_feature_EAFs(
     output_dir: str,
-    excess_atom_fractions: pd.DataFrame,
+    feature_eafs: pd.DataFrame,
     num_top: int = 50,
     confidence_interval: float = 0.9
 ) -> None:
@@ -220,8 +220,8 @@ def plot_excess_atom_fractions(
     '''
     alpha = (1 - confidence_interval) / 2
 
-    resampled_df = excess_atom_fractions[~excess_atom_fractions['observed']]
-    observed_df = excess_atom_fractions[excess_atom_fractions['observed']]
+    resampled_df = feature_eafs[~feature_eafs['observed']]
+    observed_df = feature_eafs[feature_eafs['observed']]
 
     summarized_df = resampled_df.groupby(
         'feature_id', as_index=False
