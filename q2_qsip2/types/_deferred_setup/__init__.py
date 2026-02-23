@@ -9,6 +9,7 @@
 import importlib
 
 from q2_types.feature_data import FeatureData
+from q2_types.feature_table import FeatureTable
 
 from q2_qsip2.plugin_setup import plugin
 from q2_qsip2.types._types import SourceData, FeatureWAD, SourceWAD, EAF
@@ -34,7 +35,7 @@ plugin.register_artifact_class(
 )
 
 plugin.register_artifact_class(
-    FeatureData[FeatureWAD],
+    FeatureTable[FeatureWAD],
     directory_format=QSIP2FeatureWADDirectoryFormat,
     description=(
         'Represents per-feature weighted average density (WAD) values.'

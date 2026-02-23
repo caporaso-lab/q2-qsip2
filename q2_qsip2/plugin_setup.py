@@ -14,6 +14,7 @@ from qiime2.plugin import (
 from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
 from q2_types.feature_data import FeatureData
+from q2_types.feature_table import FeatureTable
 
 from q2_qsip2 import __version__
 from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
@@ -133,7 +134,7 @@ plugin.methods.register_function(
     },
     outputs=[
         ('filtered_table', FeatureTable[RelativeFrequency]),
-        ('feature_wads', FeatureData[FeatureWAD])
+        ('feature_wads', FeatureTable[FeatureWAD])
     ],
     input_descriptions={
         'table': 'The feature table.'
@@ -184,7 +185,7 @@ plugin.methods.register_function(
     function=calculate_feature_EAFs,
     inputs={
         'table': FeatureTable[RelativeFrequency],
-        'feature_wads': FeatureData[FeatureWAD],
+        'feature_wads': FeatureTable[FeatureWAD],
     },
     parameters={
         'metadata': Metadata,
