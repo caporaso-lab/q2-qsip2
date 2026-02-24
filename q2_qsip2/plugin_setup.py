@@ -14,7 +14,6 @@ from qiime2.plugin import (
 from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
 from q2_types.feature_data import FeatureData
-from q2_types.feature_table import FeatureTable
 
 from q2_qsip2 import __version__
 from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
@@ -25,7 +24,7 @@ from q2_qsip2.workflow import (
 from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
     plot_source_WADs, plot_density_distributions, plot_density_outliers,
-    plot_feature_EAFs,
+    plot_filtering_results, plot_feature_EAFs,
 )
 
 
@@ -296,6 +295,33 @@ plugin.visualizers.register_function(
     description=(
         'Plots gradient position by density, faceted by source, to aid in the '
         'detection of density outliers.'
+    ),
+    citations=[],
+)
+
+plugin.visualizers.register_function(
+    function=plot_filtering_results,
+    inputs={
+        'unfiltered_table': FeatureTable[Frequency],
+        'filtered_table': FeatureTable[RelativeFrequency],
+    },
+    parameters={
+        'metadata': Metadata,
+    },
+    input_descriptions={
+        'unfiltered_table': (
+            'The table that was input to prevalence filtering.'
+        ),
+        'filtered_table': (
+            'The table that was output from prevalence filtering.'
+        ),
+    },
+    parameter_descriptions={
+        'metadata': 'The standardized qSIP2 metadata.',
+    },
+    name='Visualize the results of feature prevalence filtering.',
+    description=(
+        'Plots total and per-source feature counts before and after filtering.'
     ),
     citations=[],
 )

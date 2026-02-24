@@ -196,6 +196,110 @@ def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
     chart.save(pathlib.Path(output_dir) / 'index.html')
 
 
+def plot_filtering_results(
+    output_dir: str,
+    unfiltered_table: pd.DataFrame,
+    filtered_table: pd.DataFrame,
+    metadata: rachis.Metadata,
+) -> None:
+    '''
+    Plots the number of retained features in a pair of pre-filter and
+    post-filter tables, overall and by source.
+
+    Parameters
+    ----------
+    output_dir : str
+        The visualization directory.
+    unfiltered_table : pd.DataFrame
+        The pre-filtering table.
+    filtered_table : pd.DataFrame
+        The post-filtering table.
+    metadata : rachis.Metadata
+        The standardized qSIP2 metadata.
+    '''
+    metadata_df = metadata.to_dataframe()
+
+    unfiltered_with_source = pd.merge(
+        unfiltered_table,
+        metadata_df['source_mat_id'],
+        left_index=True,
+        right_index=True,
+        how='inner',
+    )
+    filtered_with_source = pd.merge(
+        filtered_table,
+        metadata_df['source_mat_id'],
+        left_index=True,
+        right_index=True,
+        how='inner',
+    )
+
+    # use max because we are only counting non-zero features
+    unfiltered_per_source = unfiltered_with_source.groupby(
+        'source_mat_id'
+    ).max(numeric_only=True)
+    filtered_per_source = filtered_with_source.groupby(
+        'source_mat_id'
+    ).max(numeric_only=True)
+
+    unfiltered_feature_counts = pd.Series(
+        (unfiltered_per_source != 0).sum(axis=1), name='unfiltered'
+    )
+    filtered_feature_counts = pd.Series(
+        (filtered_per_source != 0).sum(axis=1), name='filtered'
+    )
+
+    per_source_feature_counts = pd.merge(
+        unfiltered_feature_counts,
+        filtered_feature_counts,
+        left_index=True,
+        right_index=True,
+        how='inner',
+    ).reset_index()
+
+    per_source_feature_counts_wide = per_source_feature_counts.melt(
+        id_vars='source_mat_id',
+        value_vars=['unfiltered', 'filtered'],
+        var_name='filter_status',
+        value_name='feature_count',
+    )
+
+    per_source_chart = alt.Chart(
+        per_source_feature_counts_wide
+    ).mark_bar().encode(
+        x=alt.X('source_mat_id:N'),
+        xOffset=alt.XOffset('filter_status:N', sort=['unfiltered', 'filtered']),
+        y=alt.Y('feature_count:Q'),
+        color=alt.Color('filter_status:N'),
+        tooltip=['source_mat_id', 'filter_status', 'feature_count'],
+    ).properties(
+        title='Per-source feature counts.',
+    )
+
+    total_feature_counts = per_source_feature_counts.sum(
+        axis=0, numeric_only=True
+    ).to_frame().T
+
+    total_feature_counts_wide = total_feature_counts.melt(
+        value_vars=['unfiltered', 'filtered'],
+        var_name='filter_status',
+        value_name='feature_count',
+    )
+
+    total_chart = alt.Chart(total_feature_counts_wide).mark_bar().encode(
+        x=alt.X('filter_status:N', sort=['unfiltered', 'filtered']),
+        y=alt.Y('feature_count:Q'),
+        color=alt.Color('filter_status:N'),
+        tooltip=['filter_status', 'feature_count'],
+    ).properties(
+        title='Overall feature counts.',
+    )
+
+    chart = alt.vconcat(total_chart, per_source_chart)
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
+
+
 def plot_feature_EAFs(
     output_dir: str,
     feature_eafs: pd.DataFrame,
