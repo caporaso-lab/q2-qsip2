@@ -8,14 +8,14 @@
 
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
+from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
 
 
 class TestTypes(TestPluginBase):
     package = 'q2_qsip2.types.tests'
 
-    def test_QSIP2Data_types_registered(self):
-        self.assertRegisteredSemanticType(QSIP2Data)
-        self.assertRegisteredSemanticType(Unfiltered)
-        self.assertRegisteredSemanticType(Filtered)
+    def test_types_registered(self):
+        self.assertRegisteredSemanticType(SourceData)
+        self.assertRegisteredSemanticType(SourceWAD)
+        self.assertRegisteredSemanticType(FeatureWAD)
         self.assertRegisteredSemanticType(EAF)
