@@ -69,7 +69,7 @@ jobs:
                   source "$(conda info --base)/etc/profile.d/conda.sh"
                   conda activate "${{ env.name }}" || true
 
-                  echo "Installing '${{ env.name }}' locally..."
+                  echo "Installing '${{ env.name }}' locally... test"
                   set -e
                   pip install .
                   make install
