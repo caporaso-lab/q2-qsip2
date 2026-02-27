@@ -13,5 +13,6 @@ dependencies:
     # here so that we can use conda's binaries
     - r-clock
     - rpy2
+    - pip
     - pip:
           - q2-qsip2@git+https://github.com/caporaso-lab/q2-qsip2.git
