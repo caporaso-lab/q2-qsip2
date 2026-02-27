@@ -2,6 +2,10 @@
 
 A [QIIME 2](https://qiime2.org) plugin [developed](https://develop.qiime2.org) by Colin Wood (colin.wood@nau.edu). 🔌
 
+## Important: This package should be considered alpha software
+
+Because the underlying qSIP2 package is relatively new and only cursory user testing & validation of this software has been performed, the package should be considered experimental.
+
 ## Installation instructions
 
 ### Install Prerequisites
