@@ -46,6 +46,8 @@ jobs:
 
             - name: "Manually set up conda environment, install ${{ env.name }} locally and run tests"
               shell: bash -el {0}
+              env:
+                  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   if ! command -v conda >/dev/null 2>&1; then
                     echo "Miniconda not found. Installing Miniconda..."
