@@ -6,7 +6,7 @@ on:
         branches: ["main"]
 jobs:
     ci:
-        uses: caporaso-lab/q2-qsip2/.github/workflows/lib-community-ci-custom.yml
+        uses: caporaso-lab/q2-qsip2/.github/workflows/lib-community-ci-custom.yml@main
         with:
             github-repo: q2-qsip2
             env-file-name: q2-qsip2-qiime2-amplicon-2026.1.yml
