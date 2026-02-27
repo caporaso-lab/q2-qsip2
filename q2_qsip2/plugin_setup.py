@@ -8,17 +8,23 @@
 
 import importlib
 
-from qiime2.plugin import Citations, Float, Int, List, Metadata, Plugin, Str
-from q2_types.feature_table import FeatureTable, Frequency
+from qiime2.plugin import (
+    Citations, Float, Int, Metadata, Plugin, Str, Bool
+)
+from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
+from q2_types.metadata import ImmutableMetadata
+from q2_types.feature_data import FeatureData
 
 from q2_qsip2 import __version__
-from q2_qsip2.types import QSIP2Data, Unfiltered, Filtered, EAF
+from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
 from q2_qsip2.workflow import (
-    create_qsip_data, subset_and_filter, resample_and_calculate_EAF
+    calculate_source_WADs, calculate_feature_WADs,
+    calculate_feature_EAFs,
 )
+from q2_qsip2.metadata import standardize_metadata
 from q2_qsip2.visualizers._visualizers import (
-    plot_weighted_average_densities, plot_sample_curves, plot_density_outliers,
-    show_comparison_groups, plot_filtered_features, plot_excess_atom_fractions
+    plot_source_WADs, plot_density_distributions, plot_density_outliers,
+    plot_filtering_results, plot_feature_EAFs,
 )
 
 
@@ -38,10 +44,8 @@ plugin = Plugin(
 )
 
 plugin.methods.register_function(
-    function=create_qsip_data,
-    inputs={
-        'table': FeatureTable[Frequency]
-    },
+    function=standardize_metadata,
+    inputs={},
     parameters={
         'sample_metadata': Metadata,
         'source_metadata': Metadata,
@@ -53,53 +57,97 @@ plugin.methods.register_function(
         'gradient_pos_amt_column': Str,
     },
     outputs=[
-        ('qsip_data', QSIP2Data[Unfiltered])
+        ('standardized_metadata', ImmutableMetadata)
     ],
-    input_descriptions={
-        'table': 'The qSIP feature table.'
-    },
+    input_descriptions={},
     parameter_descriptions={
         'sample_metadata': 'The sample-level metadata.',
         'source_metadata': 'The source-level metadata.',
-        'source_mat_id_column': 'The name of the source id column.',
+        'source_mat_id_column': (
+            'The name of the source material id column in the sample-level '
+            'metadata.'
+        ),
         'isotope_column': 'The name of the isotope column.',
         'isotopolog_column': 'The name of the isotopolog column.',
         'gradient_position_column': 'The name of the gradient position column.',
-        'gradient_pos_density_column': 'The name of the density column.',
-        'gradient_pos_amt_column': 'The name of the amount column.',
+        'gradient_pos_density_column': (
+            'The name of the gradient position density column.'
+        ),
+        'gradient_pos_amt_column': (
+            'The name of the gradient position amount column.'
+        ),
     },
     output_descriptions={
-        'qsip_data': 'Placeholder.'
+        'standardized_metadata': 'The standardized qSIP2 metadata.'
     },
-    name='Bundle your qSIP metadata and feature table.',
+    name='Standardize qSIP2 metadata.',
     description=(
-        'Placeholder.'
+        'Standardizes and validates qSIP2 metadata by ensuring all requisite '
+        'variables are present, renaming variables to standardized names, and '
+        'combining separate source-level and sample-level metadata files, if '
+        'present. If a variable is present in both sample-level and '
+        'source-level metadata, the values in the sample-level metadata take '
+        'precedence.'
     ),
     citations=[]
 )
 
 plugin.methods.register_function(
-    function=subset_and_filter,
+    function=calculate_source_WADs,
     inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
+        'table': FeatureTable[Frequency],
     },
     parameters={
-        'unlabeled_sources': List[Str],
-        'labeled_sources': List[Str],
+        'metadata': Metadata,
+    },
+    outputs=[
+        ('source_wads', SourceData[SourceWAD])
+    ],
+    input_descriptions={
+        'table': 'Your feature table.'
+    },
+    parameter_descriptions={
+        'metadata': 'Your qSIP2 standardized metadata.'
+    },
+    output_descriptions={
+        'source_wads': 'The per-source weighted average densities.'
+    },
+    name='Calculate per-source weighted average densities.',
+    description='Calculate per-source weighted average densities.',
+    citations=[]
+)
+
+plugin.methods.register_function(
+    function=calculate_feature_WADs,
+    inputs={
+        'table': FeatureTable[Frequency]
+    },
+    parameters={
+        'metadata': Metadata,
+        'unlabeled_isotope': Str,
+        'labeled_isotope': Str,
         'min_unlabeled_sources': Int,
         'min_labeled_sources': Int,
         'min_unlabeled_fractions': Int,
         'min_labeled_fractions': Int
     },
     outputs=[
-        ('filtered_qsip_data', QSIP2Data[Filtered])
+        ('filtered_table', FeatureTable[RelativeFrequency]),
+        ('feature_wads', FeatureTable[FeatureWAD])
     ],
     input_descriptions={
-        'qsip_data': 'Your unfiltered qSIP2 data.'
+        'table': 'The feature table.'
     },
     parameter_descriptions={
-        'unlabeled_sources': 'The IDs of the unlabeled sources to retain.',
-        'labeled_sources': 'The IDs of the labeled sources to retain.',
+        'metadata': 'The standardized qSIP2 metadata.',
+        'unlabeled_isotope': (
+            'The value of the isotope variable that represents the unlabeled '
+            'isotope.'
+        ),
+        'labeled_isotope': (
+            'The value of the isotope variable that represents the labeled '
+            'isotope.'
+        ),
         'min_unlabeled_sources': (
             'The minimum number of unlabeled sources a feature must be '
             'present in to be retained.'
@@ -118,157 +166,177 @@ plugin.methods.register_function(
         )
     },
     output_descriptions={
-        'filtered_qsip_data': 'Your subsetted and filtered qSIP2 data.'
+        'filtered_table': 'The filtered relative abundance feature table.',
+        'feature_wads': (
+            'The per-feature weighted average densities for each feature in '
+            'in the filtered table.'
+        )
     },
-    name='Subset sources and filter features to prepare for comparison.',
+    name='Calculate per-feature weighted average densities.',
     description=(
-        'Placeholder.'
+        'Filter features by source and fraction prevalence and calculate '
+        'weighted average densities for the retained features.'
     ),
     citations=[]
 )
 
 plugin.methods.register_function(
-    function=resample_and_calculate_EAF,
+    function=calculate_feature_EAFs,
     inputs={
-        'filtered_qsip_data': QSIP2Data[Filtered]
+        'table': FeatureTable[RelativeFrequency],
+        'feature_wads': FeatureTable[FeatureWAD],
     },
     parameters={
+        'metadata': Metadata,
+        'unlabeled_isotope': Str,
+        'labeled_isotope': Str,
         'resamples': Int,
         'random_seed': Int,
+        'allow_resampling_failures': Bool,
     },
     outputs=[
-        ('eaf_qsip_data', QSIP2Data[EAF])
+        ('feature_eafs', FeatureData[EAF])
     ],
     input_descriptions={
-        'filtered_qsip_data': 'Your filtered qSIP2 data.'
+        'table': 'The prevalence-filtered feature table.',
+        'feature_wads': 'The per-feature weighted average densities.',
     },
     parameter_descriptions={
+        'metadata': 'The standardized qSIP2 metadata.',
+        'unlabeled_isotope': (
+            'The value of the isotope variable that represents the unlabeled '
+            'isotope.'
+        ),
+        'labeled_isotope': (
+            'The value of the isotope variable that represents the labeled '
+            'isotope.'
+        ),
         'resamples': 'The number of bootstrap resamplings to perform.',
         'random_seed': 'The random seed to use during resampling.',
-    },
-    output_descriptions={
-        'eaf_qsip_data': (
-            'Your qSIP2 data with excess atom fraction (EAF) values '
-            'calculated on a per-taxon basis.'
+        'allow_resampling_failures': (
+            'Whether to allow bootstrapped per-feature weighted average '
+            'density vectors that contain all-NA values. If True then such '
+            'samples are silentlly discarded, if False then an error is '
+            'raised.'
         )
     },
-    name='Calculate excess atom fraction (EAF).',
+    output_descriptions={
+        'feature_eafs': 'The per-feature excess atom fractions.',
+    },
+    name='Calculate per-feature excess atom fractions.',
     description=(
-        'Placeholder.'
+        'Calculate per-feature excess atom fractions (EAFs) and '
+        'bootstrap samples of such EAF values. Note that all sources in each '
+        'of the isotope categories are used in the calculation. If a '
+        'a comparison of only some these sources is desired then the '
+        'metadata should be subsetted first.'
     ),
     citations=[]
 )
 
 plugin.visualizers.register_function(
-    function=plot_weighted_average_densities,
+    function=plot_source_WADs,
     inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
+        'source_wads': SourceData[SourceWAD],
     },
     parameters={
-        'group': Str
+        'metadata': Metadata,
+        'group': Str,
     },
     input_descriptions={
-        'qsip_data': 'The qSIP data for which to plot the weighted average '
-                     'densities.'
+        'source_wads': 'The per-source weighted average density values.'
     },
     parameter_descriptions={
-        'group': 'A source-level metadata column used to facet the plot.'
+        'metadata': 'The standardized metdata',
+        'group': 'A source-level metadata column used to facet the plot.',
     },
     name='Plot weighted average densities.',
     description=(
-        'Plots the per-source weighted average density, colored by isotope '
-        'and optionally faceted by the source-level metadata column `group`.'
+        'Plots the per-source weighted average density values, colored by '
+        'isotope and optionally faceted by the source-level metadata column '
+        'specified by `group`.'
     ),
     citations=[],
 )
 
 plugin.visualizers.register_function(
-    function=plot_sample_curves,
+    function=plot_density_distributions,
     inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
+        'table': FeatureTable[Frequency],
     },
-    parameters={},
+    parameters={
+        'metadata': Metadata,
+    },
     input_descriptions={
-        'qsip_data': 'The qsip data artifact.'
+        'table': 'The feature table.',
     },
-    parameter_descriptions={},
+    parameter_descriptions={
+        'metadata': 'The standardized metadata.',
+    },
     name='Plot per-source density curves.',
     description=(
-        'Plots gradient position by relative amount of DNA, faceted by source.'
+        'Plot gradient density by normalized relative feature abundance for '
+        'each source.'
     ),
     citations=[],
 )
 
 plugin.visualizers.register_function(
     function=plot_density_outliers,
-    inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
+    inputs={},
+    parameters={
+        'metadata': Metadata
     },
-    parameters={},
-    input_descriptions={
-        'qsip_data': 'The qsip data artifact.'
+    input_descriptions={},
+    parameter_descriptions={
+        'metadata': 'The standardized qSIP2 metadata.'
     },
-    parameter_descriptions={},
     name='Plot per-source density outliers.',
     description=(
-        'Plots gradient position by density, faceted by source, and performs '
-        'Cook\'s outlier detection.'
+        'Plots gradient position by density, faceted by source, to aid in the '
+        'detection of density outliers.'
     ),
     citations=[],
 )
 
 plugin.visualizers.register_function(
-    function=show_comparison_groups,
+    function=plot_filtering_results,
     inputs={
-        'qsip_data': QSIP2Data[Unfiltered]
+        'unfiltered_table': FeatureTable[Frequency],
+        'filtered_table': FeatureTable[RelativeFrequency],
     },
     parameters={
-        'groups': List[Str]
+        'metadata': Metadata,
     },
     input_descriptions={
-        'qsip_data': 'The qsip data artifact.'
+        'unfiltered_table': (
+            'The table that was input to prevalence filtering.'
+        ),
+        'filtered_table': (
+            'The table that was output from prevalence filtering.'
+        ),
     },
     parameter_descriptions={
-        'groups': 'The names of one or more source-level metadata columns used '
-                  'to further subdivide the labeled and unlabeled samples.'
+        'metadata': 'The standardized qSIP2 metadata.',
     },
-    name='Show available comparison groupings.',
+    name='Visualize the results of feature prevalence filtering.',
     description=(
-        'Displays a table of source-level ids grouped in columns by isotope '
-        'and in rows by the given groups.'
+        'Plots total and per-source feature counts before and after filtering.'
     ),
     citations=[],
 )
 
 plugin.visualizers.register_function(
-    function=plot_filtered_features,
+    function=plot_feature_EAFs,
     inputs={
-        'filtered_qsip_data': QSIP2Data[Filtered]
-    },
-    parameters={},
-    input_descriptions={
-        'filtered_qsip_data': 'Your filtered qsip data artifact.'
-    },
-    parameter_descriptions={},
-    name='Visualize feature retention.',
-    description=(
-        'Displays per-source stacked bar charts of feature retention by '
-        'relative abundance and feature count.'
-    ),
-    citations=[],
-)
-
-plugin.visualizers.register_function(
-    function=plot_excess_atom_fractions,
-    inputs={
-        'eaf_qsip_data': QSIP2Data[EAF],
+        'feature_eafs': FeatureData[EAF],
     },
     parameters={
         'num_top': Int,
         'confidence_interval': Float
     },
     input_descriptions={
-        'eaf_qsip_data': 'Your EAF-calculated qSIP2 data.',
+        'feature_eafs': 'The per-feature excess atom fraction values.',
     },
     parameter_descriptions={
         'num_top': (
@@ -280,12 +348,13 @@ plugin.visualizers.register_function(
             'atom fractions.'
         )
     },
-    name='Visualize per-taxon excess atom fractions.',
+    name='Visualize per-feature excess atom fractions.',
     description=(
         'Plots per-taxon excess atom fractions with bootstrapped confidence '
         'intervals.'
     ),
     citations=[]
 )
+
 
 importlib.import_module('q2_qsip2.types._deferred_setup')

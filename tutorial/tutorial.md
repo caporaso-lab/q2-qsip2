@@ -13,7 +13,8 @@ Stable isotope probing (SIP) is defined by Wikipedia to be:
 > A substrate is enriched with a heavier stable isotope that is consumed by the organisms to be studied.
 
 If we choose a substrate whose components are incorporated into newly synthesized DNA in a living organism we can use DNA as a biomarker for activity.
-In the lab we extract this DNA and separate it according to density, into what are called "fractions". By sequencing each of these fractions separately and classifying the taxa present in each fraction, we can answer a large number of interesting questions.
+In the lab we extract this DNA and separate it according to density, into what are called "fractions".
+By sequencing each of these fractions separately and classifying the taxa present in each fraction, we can answer a large number of interesting questions.
 
 *Quantitative* stable isotope probing uses the same fundamental techniques as SIP but additionally quantifies two crucial variables:
 
@@ -33,9 +34,8 @@ Commonly, qSIP data is composed of two distinct collections of data:
 all samples
 
 The qSIP2 plugin assumes that you have both of these things already.
-If your data is in an earlier stage, for example if you have reads fresh off the sequencer, you can go to the [QIIME 2 documentation](https://docs.qiime2.org/2024.5/) to learn about how to import your data in QIIME 2.
+If your data is in an earlier stage, for example if you have reads fresh off the sequencer, you can go to the [QIIME 2 documentation](https://amplicon-docs.qiime2.org/en/stable/) to learn about how to import your data in QIIME 2.
 The [Moving Pictures Tutorial](https://docs.qiime2.org/2024.5/tutorials/moving-pictures/) shows you how to go from raw sequencing data to a feature table (and beyond).
-A feature table and associated metadata is the typical starting point for analysis of qSIP data with the q2-qsip2 plugin.
 
 If your data is in a completely different format or set of formats, please reach out to us on the [QIIME 2 Forum](https://forum.qiime2.org) for help.
 
@@ -53,11 +53,11 @@ Then there are "sample" level entities--these are the individual fractions that 
 Thus there are multiple samples per source, and study metadata must take this into account.
 
 There are two ways to store such hierarchical metadata: in a single file, or in two files, where one represents the source-level metadata and the other the sample-level metadata.
-`q2-qSIP2` plugin accepts either format.
+The `q2-qSIP2` plugin accepts either format.
 
 ### Required Metadata
 
-There is a core set of metadata that the qSIP2 plugin requires to function.
+There is a core set of metadata that the qSIP2 plugin requires.
 These are presented as individual metadata columns with a brief explanation below.
 
 - An **isotope** column.
@@ -65,7 +65,7 @@ These are presented as individual metadata columns with a brief explanation belo
   The heavy and light isotopes are sometimes referred to as "labeled" and "unlabeled", respectively.
 - An **isotopolog** column.
   This column details, for each source, which isotoplog was used for enrichment.
-  It is not uncommon for all sources to have the same isotopolog, but it is still crucial information for the software.
+  It is not uncommon for all sources to have the same isotopolog.
 - A **gradient position** column.
   This column details, for each sample, which gradient position it corresponds to, that is, which fraction the sample represents.
 - A **gradient position density** column.
@@ -79,18 +79,16 @@ In addition to the above lab-related columns this one further column that `q2-qs
   This column details, for each sample, which source-level entity it corresponds to.
   This column must be present whether one or two metadata files are provided as input.
 
-### Creating a `QSIP2Data` Artifact
+## Standardizing the Metadata
 
-With the conceptual background out of the way, we are ready to begin our analysis with `q2-qsip2`.
-The first step is to bundle our study metadata and our feature table together into a `QSIP2Data` artifact.
-This artifact, or variations of it, will be used throughout the rest of the analysis.
-We do this using the `create-qsip-data` action.
+The first step is to standardize the study metadata.
+This includes renaming important metadata variables and condensing separate source-level and sample-level metadata files (if present) into a single file.
 
-The `feature-table.qza`, `source.tsv`, and `sample.tsv` files are located in [the same directory as this tutorial](https://github.com/colinvwood/q2-qsip2/blob/main/tutorial).
+The tutorial data contains such separated source-level and sample-level metadata.
+The `source.tsv`, and `sample.tsv` files are located in [the same directory as this tutorial](https://github.com/colinvwood/q2-qsip2/blob/main/tutorial).
 
 ```shell
-qiime qsip2 create-qsip-data \
-  --i-table feature-table.qza \
+qiime qsip2 standardize-metadata \
   --m-sample-metadata-file sample.tsv \
   --m-source-metadata-file source.tsv \
   --p-source-mat-id-column source \
@@ -98,153 +96,133 @@ qiime qsip2 create-qsip-data \
   --p-gradient-position-column Fraction \
   --p-gradient-pos-density-column density_g_ml \
   --p-gradient-pos-amt-column avg_16S_g_soil \
-  --o-qsip-data qsip-data.qza
+  --o-standardized-metadata standardized-md.qza
 ```
 
-After running through the tutorial, you can adapt the commands provided here to use with your own data - we recommend starting with the tutorial data though, as it's a small data set designed to run quickly on a laptop computer.
-**Important**: When working with your own data, **if you have a single metadata file**, the software treats this a sample-level metadata, and you would simply not provide the `--p-source-metadata` argument in your call to `create-qsip-data`.
+**Important**: When working with your own data, if you have a single metadata file, the software treats this a sample-level metadata, and you would simply not provide the `--p-source-metadata` argument in your call to `standardize-metadata`.
 
-Each of the column names has a default value that can be seen by running `qiime qsip2 create-qsip-data --help` and reading the resulting command line output.
+Each of the column names has a default value that can be seen by running `qiime qsip2 standardize-metadata --help` and reading the resulting command line output.
 If a column in your metadata is already named with this default then you do not need to provide that argument.
 For example, if your **source material id** column is alread called `source_mat_id` you can drop the `--p-source-mat-id` argument from the command.
 Note that in this example we are dropping the `--p-isotoplog-column` argument from the command because our isotoplog column is already named with the default.
-If you isotopolog column has a different name, you should provide that using this parameter.
 
-This command results in a single output artifact: `qsip-data.qza`, which represents both our source- and sample-level metadata, as well as our feature table.
+## Checking for Outlier Fractions
 
-## Visualizing Our Initial qSIP Data
-
-An initial question we might have about our data is, how much denser are our enriched sources compared to our unenriched sources?
-This gives us a rough feel of the relative extents to which there is evidence of activity in our enriched samples.
-To visualize this, we use the following command.
-
-```shell
-qiime qsip2 plot-weighted-average-densities \
-  --i-qsip-data qsip-data.qza \
-  --p-group Moisture \
-  --o-visualization weighted-average-densities.qzv
-```
-
-The `--p-group` command can be any source-level metadata column that you want to use to facet the resulting plot of weighted average densities (WADs).
-Here, we are interested in seeing if activity differs between our two moisture groups, "normal" and "drought".
-
-To view the visualization you can either use [QIIME 2 View](https://view.qiime2.org), or if your computer has a screen (i.e. you aren't on a server), run the following on the command line.
-
-```shell
-qiime tools view weighted-average-densities.qzv
-```
-
-Another question we might be interested in is whether there are any samples that are outliers as far as density is concerned.
-Such outliers may require reprocessing in the lab.
-Density should vary linearly with gradient position, and we can visualize this with the following command.
+An initial quality control check one may want to perform is to look for fractions with abnormal density values.
+One way of doing so is by plotting fraction position by fraction density.
+Because fractions are created in a measured, linear manner, we expect these points to fall along a straight line and can visually scan for any that don't.
+These can then be filtered from the dataset or redone in the lab.
 
 ```shell
 qiime qsip2 plot-density-outliers \
-  --i-qsip-data qsip-data.qza \
+  --m-metadata-file standardized-md.qza \
   --o-visualization density-outliers.qzv
 ```
 
-Another quality control visualization involves plotting DNA amount against sample density.
+Visualizations can be viewed by using [QIIME 2 View](https://view.qiime2.org) or running `qiime tools view <visualization.qzv>` from the command line.
+
+## Calculating Source-Level Weighted Average Densities
+
+An initial question we might have about our data is, how much denser are our enriched sources compared to our unenriched sources?
+This gives us a rough feel of the relative extents to which there is evidence of activity in our enriched samples.
+To answer this question we calculate per-source weighted average densities as follows.
 
 ```shell
-qiime qsip2 plot-sample-curves \
-  --i-qsip-data qsip-data.qza \
-  --o-visualization sample-curves.qzv
+qiime qsip2 calculate-source-WADs \
+  --i-table feature-table.qza \
+  --m-metadata-file standardized-md.qza \
+  --o-source-wads source-wads.qza
 ```
 
-## Subsetting and Filtering
-
-Now that we have bundled our data together and performed some initial quality control, there is one more step we must perform before the true analysis can begin.
-That step is to choose which sources and which features to retain for analysis.
-To see which source IDs are available in each of the enriched and unenriched categories we can use the following command.
+These can then be visualized with:
 
 ```shell
-qiime qsip2 show-comparison-groups \
-  --i-qsip-data qsip-data.qza \
-  --p-groups Moisture \
-  --o-visualization comparison-groups.qzv
+qiime qsip2 plot-source-WADs \
+  --i-source-wads source-wads.qza \
+  --m-metadata-file standardized-md.qza \
+  --p-group Moisture \
+  --o-visualization source-wads.qzv
 ```
 
-The resulting visualization will list the source IDs available in each of the two enrichment categories, and will further divide the IDs by one or more optional metadata columns provided to the `--p-groups` argument.
-If you want to provide multiple columns simply separate them with spaces on the command line.
+The `--p-group` parameter can be any source-level metadata column that you want to use to facet the resulting plot of weighted average densities (WADs).
+Here, we are interested in seeing if activity differs between our two moisture groups, "normal" and "drought".
 
-This lets us make an informed decision about which sources to retain for comparison in the next step.
-
-Now we are ready to subset our data by keeping only sources we are interested in and keeping only those features that meet a set of prevalence requirements.
-To do so, we use the following command.
+Another quality control visualization involves plotting DNA amount against sample density within each source.
 
 ```shell
-qiime qsip2 subset-and-filter \
-  --i-qsip-data qsip-data.qza \
-  --p-unlabeled-sources S149 S150 S151 S152 S161 S162 S163 S164 \
-  --p-labeled-sources S178 S179 S180 \
-  --p-min-unlabeled-sources 6 \
-  --p-min-labeled-sources 3 \
-  --p-min-unlabeled-fractions 6 \
-  --p-min-labeled-fractions 6 \
-  --o-filtered-qsip-data filtered-qsip-data.qza
+qiime qsip2 plot-density-distributions \
+  --i-table feature-table.qza \
+  --m-metadata-file standardized-md.qza \
+  --o-visualization density-distributions.qzv
 ```
 
-There are four prevalence filters we can apply to the feature table.
-Two of these, `--p-min-unlabeled-sources` and `--p-min-labeled-sources` filter features based on their prevalence across the retained sources.
-The interpretation of the values provided in the above command is that if a feature is present in less than 6 unlabeled sources or less than 3 labeled sources, then it will be filtered.
-Because we decided to retain 6 and 3 unlabeled and labeled sources respectively, we are requiring retained features to present in *all* samples.
-The other two prevalence filters, `--p-min-unlabeled-fractions` and `--p-min-labeled-fractions` filter features based on fraction (sample) prevalence.
-The interpretation of the values provided in the above command is that if a feature is present in less than 6 fractions in an unlabeled source or less than 6 fractions in a labeled source, then that feature is not considered to be present in that source.
-This filtering thus affects the source-based filtering, described above, which is performed subsequently.
+## Calculating Feature-Level Weighted Average Densities
 
-This command outputs a single `filtered-qsip-data.qza` artifact.
-If we inspect its semantic type we will see that it is a `QSIP2Data[Filtered]` artifact.
-The original `qsip-data.qza` artifact was a `QSIP2Data[Unfiltered]`.
-This is distinction is important because it requires our data to first be filtered and subsetted before it's analyzed.
-
-Now that filtering has been performed we are interested in the number of features that have been retained, and their relative abundances.
-The following command will let us visualize these questions.
+Next we will begin to answer the following overarching question of a qSIP analysis: which microorganisms are differentially active between experimental groups of interest?
+To do so we will calculate weighted average densities for each feature in each source.
+This weighted density is caluclated as the abundance-weighted mean of the sample densities that a feature is present in.
 
 ```shell
-qiime qsip2 plot-filtered-features \
-  --i-filtered-qsip-data filtered-qsip-data.qza \
-  --o-visualization filtered-features.qzv
+qiime qsip2 calculate-feature-WADs \
+  --i-table feature-table.qza \
+  --m-metadata-file standardized-md.qza \
+  --p-unlabeled-isotope '12C' \
+  --p-labeled-isotope '13C' \
+  --p-min-unlabeled-sources 1 \
+  --p-min-labeled-sources 1 \
+  --p-min-unlabeled-fractions 2 \
+  --p-min-labeled-fractions 2 \
+  --o-filtered-table filtered-table.qza \
+  --o-feature-wads feature-wads.qza
 ```
 
-The resulting visualization contains two plots.
-The first shows per-source feature retention by relative abundance and the second shows per-source feature retention by feature count.
-Because features have differing relative abundances it's possible to see that a majority of features have been filtered although a majority of feature abundance has been retained, as is the case for the provided tutorial data.
+This action first filters the feature table to only those features that meet certain prevalence requirements.
+First, the `--p-min-[un]lableled-fractions` parameters define the number of fractions a feature must be present in to be considered present in the entire source.
+Next, the `--p-min-[un]labeled-sources` parameters define the number of sources of each isotope type a feature must be found in to be retained in the feature table and to have a WAD calculated for it.
+The `--p-[un]labeled-isotope` parameters define the isotope metadata variable values that correspond to each of the two isotope categories.
+It is assumed that all sources present in each of these categories are intended to be part of the analysis; if this is not the case then the metadata and feature table should be filtered first.
 
-
-## Calculating Excess Atom Fractions (EAFs)
-
-We are finally ready to perform the core calculations that quantify relative enrichment on a per-feature basis. There is a single command that performs this process, shown below.
+To inspect the amount of filtering that has been performed we can use the following visualization, which shows overall and per-source feature retention.
 
 ```shell
-qiime qsip2 resample-and-calculate-EAF \
-  --i-filtered-qsip-data filtered-qsip-data.qza \
-  --p-resamples 2000 \
-  --p-random-seed 123 \
-  --o-eaf-qsip-data eaf-qsip-data.qza
+qiime qsip2 plot-filtering-results \
+  --i-unfiltered-table feature-table.qza \
+  --i-filtered-table filtered-table.qza \
+  --m-metadata-file standardized-md.qza \
+  --o-visualization filtering-results.qzv
 ```
 
-This commands takes the filtered qSIP data object we generated above, along with two arguments that control aspects of the underlying statistical procedures.
+## Calculating Excess Atom Fractions
+
+Next we are ready to calculate excess atom fractions (EAFs), which are quantities defined at the feature level that represent the extent to which a feature incorporated the labeled isotope.
+An EAF of 0 means that no incorporation was measured and an EAF of 1 means that total incorporation was measured.
+This fraction is thus a proxy for activity of that feature in its source's community.
+
+```shell
+qiime qsip2 calculate-feature-EAFs \
+  --i-table filtered-table.qza \
+  --i-feature-wads feature-wads.qza \
+  --m-metadata-file standardized-md.qza \
+  --p-unlabeled-isotope 12C \
+  --p-labeled-isotope 13C \
+  --p-allow-resampling-failures \
+  --o-feature-eafs feature-eafs.qza
+```
+
 The `--p-resamples` argument gives the number of bootstrap samples to perform when sampling the per-taxon WADs.
 The `--p-random-seed` argument simply exposes the seed to the internally used random number generator.
 Setting this to the same value across multiple runs yields consistent results.
-
-Each feature has now had its excess atom fraction (EAF) calculated.
-This is a number in the range [0, 1] that expresses to what extent some feature incorporated the enriched isotope.
-An EAF of 0 means that no incorporation was measured and an EAF of 1 means that total incorporation was measured.
-This fraction is thus a proxy for activity of that feature in its source's community.
+The `--p-allow-resampling-failures` parameter allows all-NA bootstrapped samples of weighted average densities to be discarded, instead of throwing an error.
+A consequence of enabling this parameter is that some features may have fewer than `--p-resamples` samples informing their EAF confidence interval.
 
 We can visualize these EAFs using the following command.
 
 ```shell
-qiime qsip2 plot-excess-atom-fractions \
-  --i-eaf-qsip-data eaf-qsip-data.qza \
-  --p-num-top 25 \
-  --p-confidence-interval 0.95 \
-  --o-visualization excess-atom-fractions.qzv
+qiime qsip2 plot-feature-EAFs \
+  --i-feature-eafs feature-eafs.qza \
+  --p-num-top 10 \
+  --o-visualization feature-eafs.qzv
 ```
 
-This command takes two arguments beyond the input and output artifacts.
-The `--p-num-top` artifact gives the number of features to show in the plot.
-These are selected as the *n* features with the greatest EAFs.
+The `--p-num-top` parameter gives the number of features to show in the plot, selected from the largest EAF values.
 The `--p-confidence-interval` gives the interval of bootstrapped EAFs to display in the plot.

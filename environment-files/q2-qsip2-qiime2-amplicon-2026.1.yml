@@ -1,6 +1,6 @@
 name: q2-qsip2-qiime2-amplicon-2026.1
 channels:
-    - https://packages.qiime2.org/qiime2/2026.1/amplicon/passed
+    - https://packages.qiime2.org/qiime2/2026.1/amplicon/released
     - conda-forge
     - bioconda
 dependencies:
@@ -14,3 +14,5 @@ dependencies:
     - r-clock
     - rpy2
     - pip
+    - pip:
+          - q2-qsip2@git+https://github.com/caporaso-lab/q2-qsip2.git

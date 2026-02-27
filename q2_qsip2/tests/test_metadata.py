@@ -10,20 +10,22 @@ import pandas as pd
 
 import qiime2
 from qiime2.plugin.testing import TestPluginBase
+from rachis.core.exceptions import RachisWarning
 
-from q2_qsip2._wrangling import (
-    _extract_source_metadata, _validate_metadata_columns
+from q2_qsip2.metadata import (
+    _extract_source_metadata, _validate_metadata_columns,
+    _validate_source_id_overlap,
 )
 
 
-class WranglingTests(TestPluginBase):
+class TestExtractSourceMetadata(TestPluginBase):
     package = 'q2_qsip2.tests'
 
     def sample_metadata(self):
         df = pd.DataFrame({
             'sample-id': ['a', 'b', 'c', 'd'],
             'source-id': ['s1', 's2', 's1', 's2'],
-            'sample-level-data': ['w', 'x', 'y', 'z'],
+            'sample-level-data': [1, 2, 3, 4],
             'source-level-data': ['x', 'y', 'x', 'y'],
         })
         df.set_index('sample-id', inplace=True)
@@ -35,7 +37,7 @@ class WranglingTests(TestPluginBase):
             self.sample_metadata(), 'source-id'
         ).to_dataframe().reset_index()
 
-        # only rows that have a unique 'source-id' are retained; only
+        # only rows that have a unique 'source-id' are retained and only
         # source-level columns are retained
         exp = pd.DataFrame({
             'id': ['s1', 's2'],
@@ -43,6 +45,18 @@ class WranglingTests(TestPluginBase):
         })
 
         self.assertTrue(exp.equals(extracted))
+
+    def test_extract_source_metadata_source_col_not_found(self):
+        with self.assertRaisesRegex(
+            ValueError, '"source-mat-id" was not found'
+        ):
+            _extract_source_metadata(
+                self.sample_metadata(), 'source-mat-id'
+            ).to_dataframe().reset_index()
+
+
+class TestStandardizeMetadata(TestPluginBase):
+    package = 'q2_qsip2.tests'
 
     def metadata_to_validate(self):
         df = pd.DataFrame({
@@ -113,3 +127,17 @@ class WranglingTests(TestPluginBase):
 
         with self.assertRaisesRegex(ValueError, exp_error):
             _validate_metadata_columns(metadata, columns_mapping, 'source')
+
+    def test_validate_source_id_overlap(self):
+        with self.assertWarnsRegex(
+            RachisWarning,
+            '(?s)There was a misalignment.*'
+            'found only in the sample-level metadata: {\'s1\'}.*'
+            'found only in the source-level metadata: {\'s4\'}.*'
+        ):
+            _validate_source_id_overlap({'s1', 's2', 's3'}, {'s2', 's3', 's4'})
+
+        with self.assertRaisesRegex(
+            ValueError, 'There were no shared source IDs'
+        ):
+            _validate_source_id_overlap({'s1', 's2'}, {'s3', 's4'})

@@ -6,58 +6,54 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from rpy2.robjects.methods import RS4
-
-import pickle
+import pandas as pd
 
 from q2_qsip2.plugin_setup import plugin
 from q2_qsip2.types import (
-    QSIP2DataUnfilteredFormat, QSIP2DataFilteredFormat, QSIP2DataEAFFormat
+    QSIP2SourceWADsFormat, QSIP2FeatureWADFormat, QSIP2FeatureEAFFormat
 )
 
 
-def _format_to_qsip_object(ff):
+def _format_to_df(ff) -> pd.DataFrame:
     with ff.open() as fh:
-        qsip_object = pickle.load(fh)
+        df = pd.read_csv(fh, sep='\t')
 
-    return qsip_object
+    return df
 
 
-def _qsip_object_to_format(qsip_object, ff):
+def _df_to_format(df: pd.DataFrame, format):
+    ff = format()
     with ff.open() as fh:
-        pickle.dump(qsip_object, fh)
+        df.to_csv(fh, sep='\t', index=False)
 
     return ff
 
 
 @plugin.register_transformer
-def _1(qsip_object: RS4) -> QSIP2DataUnfilteredFormat:
-    ff = QSIP2DataUnfilteredFormat()
-    return _qsip_object_to_format(qsip_object, ff)
+def _1(df: pd.DataFrame) -> QSIP2SourceWADsFormat:
+    return _df_to_format(df, QSIP2SourceWADsFormat)
 
 
 @plugin.register_transformer
-def _2(ff: QSIP2DataUnfilteredFormat) -> RS4:
-    return _format_to_qsip_object(ff)
+def _2(ff: QSIP2SourceWADsFormat) -> pd.DataFrame:
+    return _format_to_df(ff)
 
 
 @plugin.register_transformer
-def _3(qsip_object: RS4) -> QSIP2DataFilteredFormat:
-    ff = QSIP2DataFilteredFormat()
-    return _qsip_object_to_format(qsip_object, ff)
+def _3(df: pd.DataFrame) -> QSIP2FeatureWADFormat:
+    return _df_to_format(df, QSIP2FeatureWADFormat)
 
 
 @plugin.register_transformer
-def _4(ff: QSIP2DataFilteredFormat) -> RS4:
-    return _format_to_qsip_object(ff)
+def _4(ff: QSIP2FeatureWADFormat) -> pd.DataFrame:
+    return _format_to_df(ff)
 
 
 @plugin.register_transformer
-def _5(qsip_object: RS4) -> QSIP2DataEAFFormat:
-    ff = QSIP2DataEAFFormat()
-    return _qsip_object_to_format(qsip_object, ff)
+def _5(df: pd.DataFrame) -> QSIP2FeatureEAFFormat:
+    return _df_to_format(df, QSIP2FeatureEAFFormat)
 
 
 @plugin.register_transformer
-def _6(ff: QSIP2DataEAFFormat) -> RS4:
-    return _format_to_qsip_object(ff)
+def _6(ff: QSIP2FeatureEAFFormat) -> pd.DataFrame:
+    return _format_to_df(ff)

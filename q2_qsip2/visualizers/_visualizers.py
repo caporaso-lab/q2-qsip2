@@ -6,129 +6,303 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import altair as alt
+import biom
+import pandas as pd
 import rpy2.robjects as ro
-from rpy2.robjects.methods import RS4
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 
-from typing import Optional
-from pathlib import Path
+import pathlib
 
-from q2_qsip2.visualizers._helpers import _ggplot2_object_to_visualization
+import rachis
+
+from q2_qsip2.metadata import _extract_source_metadata
+from q2_qsip2._constructors import _create_qsip_data
 
 qsip2 = importr('qSIP2')
 
 
-def plot_weighted_average_densities(
-    output_dir: str, qsip_data: RS4, group: Optional[str] = None
-) -> None:
-    '''
-    Plots the per-source weighted average density, colored by isotope and
-    optionally faceted by a source-level metadata column in `group`.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    group : str | None
-        An optional source-level metadata column used to facet the plot of
-        weighted average densities.
-    '''
-    if group:
-        plot = qsip2.plot_source_wads(qsip_data, group=group)
-    else:
-        plot = qsip2.plot_source_wads(qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=4
-    )
-
-
-def plot_sample_curves(output_dir: str, qsip_data: RS4) -> None:
-    '''
-    Plots gradient position by relative amount of DNA, faceted by source.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    '''
-    plot = qsip2.plot_sample_curves(qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
-    )
-
-
-def plot_density_outliers(output_dir: str, qsip_data: RS4) -> None:
-    '''
-    Plots gradient position by density, faceted by source, and performs
-    Cook's outlier detection.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    '''
-    plot = qsip2.plot_density_outliers(qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
-    )
-
-
-def show_comparison_groups(
-    output_dir: str, qsip_data: RS4, groups: list
-) -> None:
-    '''
-    Displays a table of ids grouped in columns by isotope, and in rows by the
-    given groups.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    groups : list[str]
-        The names of one or more source-level metadata columns used to further
-        subdivide the labeled and unlabeled samples.
-    '''
-    groups_vector = ro.vectors.StrVector(groups)
-
-    with (ro.default_converter + pandas2ri.converter).context():
-        df = qsip2.show_comparison_groups(qsip_data, groups_vector)
-
-    df.to_html(Path(output_dir) / 'index.html')
-
-
-def plot_filtered_features(output_dir: str, filtered_qsip_data: RS4) -> None:
-    '''
-    Displays per-source stacked bar charts showing the retention of features.
-
-    Parameters
-    ----------
-    output_dir : str
-        The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
-    '''
-    plot = qsip2.plot_filter_results(filtered_qsip_data)
-
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
-    )
-
-
-def plot_excess_atom_fractions(
+def plot_source_WADs(
     output_dir: str,
-    eaf_qsip_data: RS4,
+    source_wads: pd.DataFrame,
+    metadata: rachis.Metadata,
+    group: str | None = None
+):
+    '''
+    Plot per-source weighted average density values in a strip chart,
+    optionally faceted by a `group` variable.
+
+    Parameters
+    ----------
+    output_dir : str
+        The visualization directory.
+    source_wads : pd.DataFrame
+        The per-source WADs.
+    metadata : rachis.Metadata
+        The standardized metadata.
+    group : str | None
+        An optional source-level variable used to facet the figure.
+
+    Raises
+    ------
+    ValueError
+        If a `group` is given but not found in the source-level metadata.
+    '''
+    source_metadata_df = _extract_source_metadata(metadata).to_dataframe()
+    source_wads = pd.merge(
+        source_wads,
+        source_metadata_df,
+        left_on='source_mat_id',
+        right_index=True,
+        how='inner'
+    )
+
+    if group is not None and group not in source_wads.columns:
+        msg = (
+            f'Could not find the {group} variable in the source-level metadata.'
+        )
+        raise ValueError(msg)
+
+    chart = alt.Chart(
+        source_wads, width=200, height=400
+    ).mark_circle(size=100).encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(ticks=False, labels=False, grid=False),
+            scale=alt.Scale(padding=10)
+        ),
+        y=alt.Y(
+            'WAD:Q',
+            scale=alt.Scale(
+                domain=[source_wads['WAD'].min(), source_wads['WAD'].max()],
+                padding=10
+            ),
+        ),
+        color=alt.Color('isotope:N'),
+        tooltip=['source_mat_id:N', 'WAD:Q'],
+    ).transform_calculate(
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    )
+
+    if group:
+        chart = chart.encode(
+            column=f'{group}:N'
+        )
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
+
+
+def plot_density_distributions(
+    output_dir: str,
+    table: biom.Table,
+    metadata: rachis.Metadata,
+) -> None:
+    '''
+    Plots distributions of normalized relative abundances within each source.
+
+    Parameters
+    ----------
+    output_dir : str
+        The visualization directory.
+    table : biom.Table
+        The feature table.
+    metadata : rachis.Metadata
+        The standardized metadata.
+    '''
+    R_qsip_obj = _create_qsip_data(table, metadata)
+    with (ro.default_converter + pandas2ri.converter).context():
+        norm_rel_abun_df = R_qsip_obj.slots['tube_rel_abundance']
+
+    # sum qPCR-normalized abundances within each sample
+    per_sample_rel_abun_df = norm_rel_abun_df.groupby(
+        'sample_id', as_index=False
+    ).agg({
+        'tube_rel_abundance': 'sum',
+    })
+
+    per_sample_rel_abun_df = pd.merge(
+        per_sample_rel_abun_df,
+        metadata.to_dataframe(),
+        left_on='sample_id',
+        right_index=True,
+        how='inner'
+    )
+
+    base = alt.Chart(per_sample_rel_abun_df).encode(
+        x=alt.X('gradient_pos_density:Q'),
+        y=alt.Y('tube_rel_abundance:Q'),
+        color='source_mat_id:N',
+    )
+
+    line = base.mark_line(interpolate='cardinal').encode(
+        strokeDash='isotope:N'
+    )
+    point = base.mark_circle(size=50).encode(tooltip=[
+        'sample_id:N', 'gradient_pos_density:Q', 'tube_rel_abundance:Q'
+    ])
+    chart = line + point
+
+    chart = chart.facet(
+        facet='source_mat_id:N', columns=5
+    ).resolve_scale(
+        x='independent',
+        y='independent'
+    )
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
+
+
+def plot_density_outliers(output_dir: str, metadata: rachis.Metadata) -> None:
+    '''
+    Plots gradient position (fraction) by gradient position density to show
+    any trend outliers.
+
+    Parameters
+    ----------
+    output_dir : str
+        The visualization directory.
+    metadata : rachis.Metadata
+        The standardized metadata.
+    '''
+    metadata_df = metadata.to_dataframe().reset_index(names='sample_id')
+
+    base = alt.Chart(metadata_df).encode(
+        x=alt.X('gradient_position:Q'),
+        y=alt.Y(
+            'gradient_pos_density:Q',
+            scale=alt.Scale(zero=False)
+        ),
+    )
+
+    point = base.mark_circle(size=50).encode(
+        tooltip=['sample_id:N', 'gradient_position:Q', 'gradient_pos_density:N']
+    )
+
+    regression = base.transform_regression(
+        'gradient_position', 'gradient_pos_density',
+        groupby=['source_mat_id']
+    ).mark_line(color='orange')
+
+    chart = alt.layer(regression, point).facet(
+        facet='source_mat_id:N',
+        columns=5,
+    ).resolve_scale(
+        x='independent',
+        y='independent'
+    )
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
+
+
+def plot_filtering_results(
+    output_dir: str,
+    unfiltered_table: pd.DataFrame,
+    filtered_table: pd.DataFrame,
+    metadata: rachis.Metadata,
+) -> None:
+    '''
+    Plots the number of retained features in a pair of pre-filter and
+    post-filter tables, overall and by source.
+
+    Parameters
+    ----------
+    output_dir : str
+        The visualization directory.
+    unfiltered_table : pd.DataFrame
+        The pre-filtering table.
+    filtered_table : pd.DataFrame
+        The post-filtering table.
+    metadata : rachis.Metadata
+        The standardized qSIP2 metadata.
+    '''
+    metadata_df = metadata.to_dataframe()
+
+    unfiltered_with_source = pd.merge(
+        unfiltered_table,
+        metadata_df['source_mat_id'],
+        left_index=True,
+        right_index=True,
+        how='inner',
+    )
+    filtered_with_source = pd.merge(
+        filtered_table,
+        metadata_df['source_mat_id'],
+        left_index=True,
+        right_index=True,
+        how='inner',
+    )
+
+    # use max because we are only counting non-zero features
+    unfiltered_per_source = unfiltered_with_source.groupby(
+        'source_mat_id'
+    ).max(numeric_only=True)
+    filtered_per_source = filtered_with_source.groupby(
+        'source_mat_id'
+    ).max(numeric_only=True)
+
+    unfiltered_feature_counts = pd.Series(
+        (unfiltered_per_source != 0).sum(axis=1), name='unfiltered'
+    )
+    filtered_feature_counts = pd.Series(
+        (filtered_per_source != 0).sum(axis=1), name='filtered'
+    )
+
+    per_source_feature_counts = pd.merge(
+        unfiltered_feature_counts,
+        filtered_feature_counts,
+        left_index=True,
+        right_index=True,
+        how='inner',
+    ).reset_index()
+
+    per_source_feature_counts_wide = per_source_feature_counts.melt(
+        id_vars='source_mat_id',
+        value_vars=['unfiltered', 'filtered'],
+        var_name='filter_status',
+        value_name='feature_count',
+    )
+
+    per_source_chart = alt.Chart(
+        per_source_feature_counts_wide
+    ).mark_bar().encode(
+        x=alt.X('source_mat_id:N'),
+        xOffset=alt.XOffset('filter_status:N', sort=['unfiltered', 'filtered']),
+        y=alt.Y('feature_count:Q'),
+        color=alt.Color('filter_status:N'),
+        tooltip=['source_mat_id', 'filter_status', 'feature_count'],
+    ).properties(
+        title='Per-source feature counts.',
+    )
+
+    total_feature_counts = per_source_feature_counts.sum(
+        axis=0, numeric_only=True
+    ).to_frame().T
+
+    total_feature_counts_wide = total_feature_counts.melt(
+        value_vars=['unfiltered', 'filtered'],
+        var_name='filter_status',
+        value_name='feature_count',
+    )
+
+    total_chart = alt.Chart(total_feature_counts_wide).mark_bar().encode(
+        x=alt.X('filter_status:N', sort=['unfiltered', 'filtered']),
+        y=alt.Y('feature_count:Q'),
+        color=alt.Color('filter_status:N'),
+        tooltip=['filter_status', 'feature_count'],
+    ).properties(
+        title='Overall feature counts.',
+    )
+
+    chart = alt.vconcat(total_chart, per_source_chart)
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')
+
+
+def plot_feature_EAFs(
+    output_dir: str,
+    feature_eafs: pd.DataFrame,
     num_top: int = 50,
     confidence_interval: float = 0.9
 ) -> None:
@@ -139,8 +313,8 @@ def plot_excess_atom_fractions(
     ----------
     output_dir : str
         The root directory of the visualization loaded into the browser.
-    qsip_data : RS4
-        The "qsip_data" object.
+    excess_atom_fractions : pd.DataFrame
+        The per-feature excess atom fraction bootstrap samples.
     num_top : int
         The number of taxa displayed taken in order of decreasing excess
         atom fraction.
@@ -148,10 +322,46 @@ def plot_excess_atom_fractions(
         The confidence interval to display from the bootstrapped excess atom
         fraction values.
     '''
-    plot = qsip2.plot_EAF_values(
-        eaf_qsip_data, top=num_top, confidence=confidence_interval, error='bar'
+    alpha = (1 - confidence_interval) / 2
+
+    resampled_df = feature_eafs[~feature_eafs['observed']]
+    observed_df = feature_eafs[feature_eafs['observed']]
+
+    summarized_df = resampled_df.groupby(
+        'feature_id', as_index=False
+    ).agg(
+        mean_EAF=('EAF', 'mean'),
+        lower=('EAF', lambda s: s.quantile(alpha)),
+        upper=('EAF', lambda s: s.quantile(1 - alpha)),
     )
 
-    _ggplot2_object_to_visualization(
-        plot, Path(output_dir), width=10, height=10
+    all_eaf_df = pd.merge(
+        observed_df, summarized_df, on='feature_id', how='left'
     )
+
+    all_eaf_df.sort_values(by='EAF', inplace=True, ascending=False)
+    all_eaf_df = all_eaf_df.iloc[0: min(num_top, len(all_eaf_df)), :]
+
+    points = alt.Chart(all_eaf_df).mark_circle(size=80).encode(
+        x=alt.X('EAF:Q'),
+        y=alt.Y(
+            'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
+        ),
+        tooltip=['feature_id:N', 'EAF:Q'],
+    )
+
+    x_axis_title = (
+        f'Excess Atom Fraction, {confidence_interval} confidence interval'
+    )
+    intervals = alt.Chart(all_eaf_df).mark_errorbar().encode(
+        x=alt.X('lower:Q', title=x_axis_title),
+        x2='upper:Q',
+        y=alt.Y(
+            'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
+        ),
+        tooltip=alt.value(None)
+    )
+
+    chart = intervals + points
+
+    chart.save(pathlib.Path(output_dir) / 'index.html')

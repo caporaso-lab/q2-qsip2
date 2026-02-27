@@ -7,12 +7,16 @@
 # ----------------------------------------------------------------------------
 
 from qiime2.plugin import SemanticType
+from q2_types.feature_data import FeatureData
+from q2_types.feature_table import FeatureTable
 
 
-QSIP2Data = SemanticType('QSIP2Data', field_names='stage')
+SourceData = SemanticType('SourceData', field_names='type')
 
-Unfiltered = SemanticType('Unfiltered', variant_of=QSIP2Data.field['stage'])
+SourceWAD = SemanticType('SourceWAD', variant_of=SourceData.field['type'])
 
-Filtered = SemanticType('Filtered', variant_of=QSIP2Data.field['stage'])
+FeatureWAD = SemanticType(
+    'FeatureWAD', variant_of=FeatureTable.field['content']
+)
 
-EAF = SemanticType('EAF', variant_of=QSIP2Data.field['stage'])
+EAF = SemanticType('EAF', variant_of=FeatureData.field['type'])
