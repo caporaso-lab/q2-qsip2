@@ -72,8 +72,6 @@ jobs:
                   echo "Installing '${{ env.name }}' locally..."
                   set -e
                   pip install .
-                  echo "Shell sees GITHUB_PAT? -> ${GITHUB_PAT:+yes}"
-                  Rscript -e 'cat("R sees GITHUB_PAT? ->", nzchar(Sys.getenv("GITHUB_PAT")), "\n")'
                   make install
                   echo "Installation successful!"
 
