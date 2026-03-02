@@ -90,12 +90,10 @@ Have fun! 😎
 ## About
 
 The `q2-qsip2` Python package was [created from template](https://develop.qiime2.org/en/stable/plugins/tutorials/create-from-template.html).
-To learn more about `q2-qsip2`, refer to the [project website](www.qiime2.org).
 To learn how to use QIIME 2, refer to the [QIIME 2 User Documentation](https://docs.qiime2.org).
 To learn QIIME 2 plugin development, refer to [*Developing with QIIME 2*](https://develop.qiime2.org).
 
-`q2-qsip2` is a QIIME 2 community plugin, meaning that it is not necessarily developed and maintained by the developers of QIIME 2.
-Please be aware that because community plugins are developed by the QIIME 2 developer community, and not necessarily the QIIME 2 developers themselves, some may not be actively maintained or compatible with current release versions of the QIIME 2 distributions.
+`q2-qsip2` is a QIIME 2 community plugin.
 More information on development and support for community plugins can be found [here](https://library.qiime2.org).
 If you need help with a community plugin, first refer to the [project website](www.qiime2.org).
 If that page doesn't provide information on how to get help, or you need additional help, head to the [Community Plugins category](https://forum.qiime2.org/c/community-contributions/community-plugins/14) on the QIIME 2 Forum where the QIIME 2 developers will do their best to help you.
