@@ -13,7 +13,7 @@ from qiime2.plugin import (
 )
 from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
-from q2_types.feature_data import FeatureData
+from q2_types.feature_data import FeatureData, Taxonomy
 
 from q2_qsip2 import __version__
 from q2_qsip2.types import SourceData, SourceWAD, FeatureWAD, EAF
@@ -330,6 +330,7 @@ plugin.visualizers.register_function(
     function=plot_feature_EAFs,
     inputs={
         'feature_eafs': FeatureData[EAF],
+        'taxonomy': FeatureData[Taxonomy],
     },
     parameters={
         'num_top': Int,
@@ -337,6 +338,10 @@ plugin.visualizers.register_function(
     },
     input_descriptions={
         'feature_eafs': 'The per-feature excess atom fraction values.',
+        'taxonomy': (
+            'The taxonomic classifications of the features in `table`. The '
+            'classifications are visible in the hover box for each feature.'
+        ),
     },
     parameter_descriptions={
         'num_top': (

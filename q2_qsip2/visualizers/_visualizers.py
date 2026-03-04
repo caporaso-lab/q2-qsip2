@@ -303,6 +303,7 @@ def plot_filtering_results(
 def plot_feature_EAFs(
     output_dir: str,
     feature_eafs: pd.DataFrame,
+    taxonomy: pd.DataFrame = None,
     num_top: int = 50,
     confidence_interval: float = 0.9
 ) -> None:
@@ -315,6 +316,8 @@ def plot_feature_EAFs(
         The root directory of the visualization loaded into the browser.
     excess_atom_fractions : pd.DataFrame
         The per-feature excess atom fraction bootstrap samples.
+    taxonomy: pd.DataFrame | None
+        The taxonomic annotations of the features in the table.
     num_top : int
         The number of taxa displayed taken in order of decreasing excess
         atom fraction.
@@ -339,6 +342,17 @@ def plot_feature_EAFs(
         observed_df, summarized_df, on='feature_id', how='left'
     )
 
+    tooltips = ['feature_id:N', 'EAF:Q']
+    if taxonomy is not None:
+        all_eaf_df = pd.merge(
+            all_eaf_df,
+            taxonomy,
+            left_on='feature_id',
+            right_index=True,
+            how='left'
+        )
+        tooltips.append('Taxon:N')
+
     all_eaf_df.sort_values(by='EAF', inplace=True, ascending=False)
     all_eaf_df = all_eaf_df.iloc[0: min(num_top, len(all_eaf_df)), :]
 
@@ -347,7 +361,7 @@ def plot_feature_EAFs(
         y=alt.Y(
             'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
         ),
-        tooltip=['feature_id:N', 'EAF:Q'],
+        tooltip=tooltips,
     )
 
     x_axis_title = (
@@ -359,7 +373,7 @@ def plot_feature_EAFs(
         y=alt.Y(
             'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
         ),
-        tooltip=alt.value(None)
+        tooltip=alt.value(None),
     )
 
     chart = intervals + points
