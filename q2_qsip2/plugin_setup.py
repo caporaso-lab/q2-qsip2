@@ -9,7 +9,7 @@
 import importlib
 
 from qiime2.plugin import (
-    Citations, Float, Int, Metadata, Plugin, Str, Bool
+    Citations, Float, Int, Metadata, Plugin, Str, Bool, Range
 )
 from q2_types.feature_table import FeatureTable, Frequency, RelativeFrequency
 from q2_types.metadata import ImmutableMetadata
@@ -333,6 +333,7 @@ plugin.visualizers.register_function(
         'taxonomy': FeatureData[Taxonomy],
     },
     parameters={
+        'color_level': Int % Range(0, None),
         'num_top': Int,
         'confidence_interval': Float
     },
@@ -344,6 +345,11 @@ plugin.visualizers.register_function(
         ),
     },
     parameter_descriptions={
+        'color_level': (
+            'A taxonomic level (depth) at which to color the EAF values. A '
+            'taxonomy must be provided to take effect. If 0, then no coloring '
+            'will be applied.'
+        ),
         'num_top': (
             'The number of taxa displayed, selected in order of decreasing '
             'excess atom fraction.'

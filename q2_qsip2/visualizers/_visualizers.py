@@ -19,6 +19,8 @@ import rachis
 
 from q2_qsip2.metadata import _extract_source_metadata
 from q2_qsip2._constructors import _create_qsip_data
+from q2_qsip2._util import _get_max_level, _add_collapsed_column
+
 
 qsip2 = importr('qSIP2')
 
@@ -304,6 +306,7 @@ def plot_feature_EAFs(
     output_dir: str,
     feature_eafs: pd.DataFrame,
     taxonomy: pd.DataFrame = None,
+    color_level: int = 0,
     num_top: int = 50,
     confidence_interval: float = 0.9
 ) -> None:
@@ -316,8 +319,11 @@ def plot_feature_EAFs(
         The root directory of the visualization loaded into the browser.
     excess_atom_fractions : pd.DataFrame
         The per-feature excess atom fraction bootstrap samples.
-    taxonomy: pd.DataFrame | None
+    taxonomy : pd.DataFrame | None
         The taxonomic annotations of the features in the table.
+    color_level : int
+        The taxonomic level at which to color feature EAFs. If 0, then no
+        coloring is performed.
     num_top : int
         The number of taxa displayed taken in order of decreasing excess
         atom fraction.
@@ -343,7 +349,23 @@ def plot_feature_EAFs(
     )
 
     tooltips = ['feature_id:N', 'EAF:Q']
+    color = alt.value('#5897fc')
     if taxonomy is not None:
+        if color_level != 0:
+            if color_level > _get_max_level(taxonomy):
+                raise ValueError(
+                    'Can not color at a level deeper than the taxonomy.'
+                )
+
+            _add_collapsed_column(taxonomy, color_level)
+            color_column = f'Taxon at Level {color_level}'
+            color = alt.Color(
+                f'{color_column}:N',
+                legend=alt.Legend(labelLimit=500),
+                scale=alt.Scale(scheme='category10')
+            )
+            tooltips.append(f'{color_column}:N')
+
         all_eaf_df = pd.merge(
             all_eaf_df,
             taxonomy,
@@ -353,6 +375,7 @@ def plot_feature_EAFs(
         )
         tooltips.append('Taxon:N')
 
+
     all_eaf_df.sort_values(by='EAF', inplace=True, ascending=False)
     all_eaf_df = all_eaf_df.iloc[0: min(num_top, len(all_eaf_df)), :]
 
@@ -361,18 +384,23 @@ def plot_feature_EAFs(
         y=alt.Y(
             'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
         ),
+        color=color,
         tooltip=tooltips,
     )
 
     x_axis_title = (
         f'Excess Atom Fraction, {confidence_interval} confidence interval'
     )
-    intervals = alt.Chart(all_eaf_df).mark_errorbar().encode(
+    intervals = alt.Chart(all_eaf_df).mark_errorbar(
+        ticks=True,
+        thickness=2
+    ).encode(
         x=alt.X('lower:Q', title=x_axis_title),
         x2='upper:Q',
         y=alt.Y(
             'feature_id:N', sort=alt.SortField(field='EAF', order='descending')
         ),
+        color=color,
         tooltip=alt.value(None),
     )
 
