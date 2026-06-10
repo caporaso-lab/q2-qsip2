@@ -1,10 +1,10 @@
-name: q2-qsip2-qiime2-amplicon-2026.1
+name: q2-qsip2-qiime2-amplicon-2026.4
 channels:
-    - https://packages.qiime2.org/qiime2/2026.1/amplicon/released
+    - https://packages.qiime2.org/qiime2/2026.4/qiime2/released/
     - conda-forge
     - bioconda
 dependencies:
-    - qiime2-amplicon
+    - rachis-qiime2
     - r-remotes
     - r-svglite
     - r-gt
